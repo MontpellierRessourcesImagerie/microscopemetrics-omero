@@ -1,14 +1,32 @@
 [tool.poetry]
-name = "microscope-metrics-omero"
+name = "microscopemetrics-omero"
 version = "0.1.0"
-description = ""
+description = "A package to compute metrics on OMERO images using micrsocope-metrics"
 authors = ["Julio Mateos Langerak <julio.mateos-langerak@igh.cnrs.fr>"]
+license = "GPL-3.0-only"
 readme = "README.md"
-packages = [{include = "microscope_metrics_omero"}]
+packages = [{include = "microscopemetrics_omero"}]
+keywords = ["microscopy", "metrology"]
+
+[tool.pytest.ini_options]
+addopts = "--cov"
+testpaths = [
+    "tests"
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+microscopemetrics = "0.1.0"
 
+[tool.poetry.group.test.dependencies]
+pytest = "^6.2.0"
+pytest-cov = "^4.0.0"
+tox = "^3.26.0"
+
+[tool.poetry.group.dev.dependencies]
+blacked = "^0.1.0-alpha.4"
+poetry = "^1.2.2"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
