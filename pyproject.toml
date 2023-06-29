@@ -15,8 +15,9 @@ testpaths = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-microscopemetrics = "0.1.0"
+python = ">=3.8 <=3.11"
+microscopemetrics = { git = "https://github.com/MontpellierRessourcesImagerie/microscope-metrics.git" }
+omero-py = "^5.14.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^6.2.0"
