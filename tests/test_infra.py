@@ -1,3 +1,5 @@
+import ezomero
+
 def test_get_project_ids(conn, project_structure, users_groups):
     project_info = project_structure[0]
 

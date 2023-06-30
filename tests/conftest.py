@@ -15,6 +15,8 @@ from omero.rtypes import rint
 import importlib.util
 import pandas as pd
 
+import ezomero
+
 
 # Settings for OMERO
 DEFAULT_OMERO_USER = "root"
