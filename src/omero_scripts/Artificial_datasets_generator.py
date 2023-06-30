@@ -37,10 +37,12 @@ from datetime import datetime
 from itertools import product
 
 import numpy as np
+
 # import omero dependencies
 # import omero.scripts as scripts
 import omero.gateway as gateway
 from metrics.interface import omero as ome
+
 # import configuration parser
 from metrics.utils.utils import MetricsConfig
 from skimage import img_as_float
@@ -48,9 +50,6 @@ from skimage.filters import gaussian
 from skimage.util import random_noise
 
 # from omero.rtypes import rlong, rstring
-
-
-
 
 
 def Run_script_locally():

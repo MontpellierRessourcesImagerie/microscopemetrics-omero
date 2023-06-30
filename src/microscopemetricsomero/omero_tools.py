@@ -8,13 +8,32 @@ from typing import Union
 import numpy as np
 from omero import grid
 from omero.constants import metadata, namespaces
-from omero.gateway import (BlitzGateway, CommentAnnotationWrapper,
-                           DatasetWrapper, FileAnnotationWrapper, ImageWrapper,
-                           MapAnnotationWrapper, ProjectWrapper, RoiWrapper,
-                           TagAnnotationWrapper)
-from omero.model import (DatasetI, EllipseI, ImageI, LengthI, LineI, MaskI,
-                         OriginalFileI, PointI, PolygonI, ProjectI, RectangleI,
-                         RoiI, enums)
+from omero.gateway import (
+    BlitzGateway,
+    CommentAnnotationWrapper,
+    DatasetWrapper,
+    FileAnnotationWrapper,
+    ImageWrapper,
+    MapAnnotationWrapper,
+    ProjectWrapper,
+    RoiWrapper,
+    TagAnnotationWrapper,
+)
+from omero.model import (
+    DatasetI,
+    EllipseI,
+    ImageI,
+    LengthI,
+    LineI,
+    MaskI,
+    OriginalFileI,
+    PointI,
+    PolygonI,
+    ProjectI,
+    RectangleI,
+    RoiI,
+    enums,
+)
 from omero.rtypes import rdouble, rint, rlong, rstring
 from pandas import DataFrame
 
