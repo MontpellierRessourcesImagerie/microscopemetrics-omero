@@ -30,30 +30,31 @@ This script is generating a number of copies of a dataset introducing some noise
 @since 3.0-Beta4.3
 """
 
+# import logging
+import logging
+import random
+from datetime import datetime
+from itertools import product
+
+import numpy as np
 # import omero dependencies
 # import omero.scripts as scripts
 import omero.gateway as gateway
 from metrics.interface import omero as ome
+# import configuration parser
+from metrics.utils.utils import MetricsConfig
+from skimage import img_as_float
+from skimage.filters import gaussian
+from skimage.util import random_noise
 
 # from omero.rtypes import rlong, rstring
 
-import numpy as np
-from skimage.util import random_noise
-from skimage.filters import gaussian
-from skimage import img_as_float
-import random
-from itertools import product
 
-# import configuration parser
-from metrics.utils.utils import MetricsConfig
 
-# import logging
-import logging
-from datetime import datetime
 
 
 def Run_script_locally():
-    from credentials import USER, PASSWORD, GROUP, PORT, HOST
+    from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
     conn = gateway.BlitzGateway(
         username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST

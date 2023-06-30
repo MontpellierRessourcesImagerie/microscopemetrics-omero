@@ -1,43 +1,22 @@
 import json
 import logging
 from itertools import product
-from typing import Union
 from random import choice
 from string import ascii_letters
+from typing import Union
 
 import numpy as np
-from pandas import DataFrame
-
-from omero.gateway import BlitzGateway
-from omero.constants import metadata, namespaces
-from omero.gateway import (
-    TagAnnotationWrapper,
-    MapAnnotationWrapper,
-    FileAnnotationWrapper,
-    CommentAnnotationWrapper,
-    RoiWrapper,
-    ImageWrapper,
-    DatasetWrapper,
-    ProjectWrapper,
-)
-from omero.model import (
-    enums,
-    RoiI,
-    EllipseI,
-    PointI,
-    LineI,
-    MaskI,
-    RectangleI,
-    PolygonI,
-    LengthI,
-    ImageI,
-    DatasetI,
-    ProjectI,
-    OriginalFileI,
-)
-from omero.rtypes import rlong, rdouble, rint, rstring
 from omero import grid
-
+from omero.constants import metadata, namespaces
+from omero.gateway import (BlitzGateway, CommentAnnotationWrapper,
+                           DatasetWrapper, FileAnnotationWrapper, ImageWrapper,
+                           MapAnnotationWrapper, ProjectWrapper, RoiWrapper,
+                           TagAnnotationWrapper)
+from omero.model import (DatasetI, EllipseI, ImageI, LengthI, LineI, MaskI,
+                         OriginalFileI, PointI, PolygonI, ProjectI, RectangleI,
+                         RoiI, enums)
+from omero.rtypes import rdouble, rint, rlong, rstring
+from pandas import DataFrame
 
 DTYPES_NP_TO_OMERO = {
     "int8": enums.PixelsTypeint8,

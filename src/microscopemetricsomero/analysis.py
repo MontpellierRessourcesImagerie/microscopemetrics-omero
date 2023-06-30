@@ -1,15 +1,9 @@
 import logging
-
 from datetime import datetime
 
+import omero_tools as omero_tools
 from microscopemetrics import samples
 from omero.gateway import BlitzGateway, ImageWrapper
-
-
-from microscopemetrics import samples
-
-import omero_tools as omero_tools
-
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetricsomero.analysis")

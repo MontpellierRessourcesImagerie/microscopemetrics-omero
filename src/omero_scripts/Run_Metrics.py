@@ -30,21 +30,20 @@ This script runs microscope-metrics on the selected dataset.
 @since 3.0-Beta4.3
 """
 
-# import omero dependencies
-import omero.scripts as scripts
-import omero.gateway as gateway
-from omero.rtypes import rlong, rstring
-
-# import metrics
-import src.microscopemetricsomero.analysis as analysis
-
-# import configuration parser
-import yaml
-
 # import logging utilities
 import logging
 from datetime import datetime
 from io import StringIO
+
+import omero.gateway as gateway
+# import omero dependencies
+import omero.scripts as scripts
+# import configuration parser
+import yaml
+from omero.rtypes import rlong, rstring
+
+# import metrics
+import src.microscopemetricsomero.analysis as analysis
 
 # Creating logging services
 logger = logging.getLogger("microscopemetrics")
@@ -72,7 +71,7 @@ logger.addHandler(string_hdl)
 
 
 def run_script_local():
-    from credentials import USER, PASSWORD, GROUP, PORT, HOST
+    from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
     conn = gateway.BlitzGateway(
         username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST

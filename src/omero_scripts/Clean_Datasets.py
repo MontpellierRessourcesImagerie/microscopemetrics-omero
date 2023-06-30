@@ -30,15 +30,14 @@ This script deletes from a list of datasets the data produced by OMERO-metrics.
 @since 3.0-Beta4.3
 """
 
-# import omero dependencies
-import omero.scripts as scripts
-import omero.gateway as gateway
-from omero.rtypes import rlong, rstring, robject
-
-from datetime import datetime
-
 # Creating logging services
 import logging
+from datetime import datetime
+
+import omero.gateway as gateway
+# import omero dependencies
+import omero.scripts as scripts
+from omero.rtypes import rlong, robject, rstring
 
 logger = logging.getLogger("metrics")
 logger.setLevel(logging.DEBUG)
@@ -110,7 +109,7 @@ def clean_dataset(connection, dataset, namespace_like=None):
 
 
 def run_script_local():
-    from credentials import USER, PASSWORD, GROUP, PORT, HOST
+    from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
     conn = gateway.BlitzGateway(
         username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
