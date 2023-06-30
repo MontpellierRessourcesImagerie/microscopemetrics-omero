@@ -25,12 +25,18 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Install project
         run: poetry install --no-interaction
-      - name: Test with pytest and generate coverage report/badge
+      - name: Run tests
         run: |
-          pip install coverage coverage-badge
-          coverage run -m pytest tests/
-          coverage report -i
-          coverage-badge -f -o coverage.svg
+          source .venv/bin/activate
+          pytest tests/
+          coverage report
+
+#      - name: Test with pytest and generate coverage report/badge
+#        run: |
+#          pip install coverage coverage-badge
+#          coverage run -m pytest tests/
+#          coverage report -i
+#          coverage-badge -f -o coverage.svg
 #      - name: Commit badge
 #        run: |
 #          git config --global user.name 'Erick Ratamero'
