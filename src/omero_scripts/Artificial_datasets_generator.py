@@ -84,7 +84,7 @@ def Run_script_locally():
         source_dataset = conn.getObject('Dataset', script_params['DatasetID'])
         project = source_dataset.getParent()
         images = list(source_dataset.listChildren())
-        images_data = [ome.get_intensities(i) for i in images]
+        images_data = [ome.get_image_intensities(i) for i in images]
 
         for n in range(script_params['nr of copies']):
             new_dataset = ome.create_dataset(connection=conn,

@@ -54,7 +54,9 @@ ANALYSES:
     sample: psf_beads
     analysis_class: PSFBeadsAnalysis
     description: PSF beads analysis
-    tag_id: 1279  # TODO: move to main config
+    data:
+      name: psf_beads
+      tag_id: 1279  # TODO: move to main config
     parameters:
       sigma: 1
       min_distance: 50
