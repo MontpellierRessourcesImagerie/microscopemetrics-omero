@@ -54,7 +54,9 @@ logger.setLevel(logging.DEBUG)
 log_string = StringIO()
 string_hdl = logging.StreamHandler(log_string)
 string_hdl.setLevel(logging.WARNING)
-formatter = logging.Formatter("%(asctime)s: %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+formatter = logging.Formatter(
+    "%(asctime)s: %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+)
 # formatter = logging.Formatter("%Y-%m-%d %H:%M:%S - %(levelname)s - %(message)s")
 string_hdl.setFormatter(formatter)
 
@@ -71,17 +73,17 @@ logger.addHandler(string_hdl)
 
 def run_script_local():
     from credentials import USER, PASSWORD, GROUP, PORT, HOST
-    conn = gateway.BlitzGateway(username=USER,
-                                passwd=PASSWORD,
-                                group=GROUP,
-                                port=PORT,
-                                host=HOST)
+
+    conn = gateway.BlitzGateway(
+        username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
+    )
 
     script_params = {
-                     # "IDs": [154],
-                     "IDs": [1],
-                     "Configuration file name": "yearly_config.ini",
-                     "Comment": "This is a test comment"}
+        # "IDs": [154],
+        "IDs": [1],
+        "Configuration file name": "yearly_config.ini",
+        "Comment": "This is a test comment",
+    }
 
     try:
         conn.connect()
@@ -99,14 +101,18 @@ def run_script_local():
         device_config = MetricsConfig()
         device_config.read(analysis_config.get("MAIN", "device_conf_file_name"))
 
-        datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
+        datasets = conn.getObjects(
+            "Dataset", script_params["IDs"]
+        )  # generator of datasets
 
         for dataset in datasets:
-            analysis.analyze_dataset(conn=conn,
-                                     script_params=script_params,
-                                     dataset=dataset,
-                                     analyses_config=analysis_config,
-                                     device_config=device_config)
+            analysis.analyze_dataset(
+                conn=conn,
+                script_params=script_params,
+                dataset=dataset,
+                analyses_config=analysis_config,
+                device_config=device_config,
+            )
 
         print(log_string.getvalue())
 
@@ -115,34 +121,44 @@ def run_script_local():
         log_string.close()
         conn.close()
 
+
 def _read_config_from_file_ann(file_annotation):
-    return yaml.load(file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader)
+    return yaml.load(
+        file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
+    )
+
 
 def run_script():
-
     client = scripts.client(
         "Run_Metrics.py",
         """This is the main script of microscope-metrics-omero. It will run the analyses on the selected 
         dataset. For more information check \n
         http://www.mri.cnrs.fr\n  
         Copyright: Write here some copyright info""",  # TODO: copyright info and documentation
-
         scripts.String(
-            "Data_Type", optional=False, grouping="1",
-            description="The dataset you want to work with.", values=[rstring("Dataset")],
-            default="Dataset"),
-
+            "Data_Type",
+            optional=False,
+            grouping="1",
+            description="The dataset you want to work with.",
+            values=[rstring("Dataset")],
+            default="Dataset",
+        ),
         scripts.List(
-            "IDs", optional=False, grouping="1",
-            description="List of Dataset IDs").ofType(rlong(0)),
-
+            "IDs", optional=False, grouping="1", description="List of Dataset IDs"
+        ).ofType(rlong(0)),
         scripts.String(  # TODO: make enum list with other options. This should be in the main config file
-            "Configuration file name", optional=False, grouping="1", default="monthly_config.ini",
-            description="Add here any eventuality that you want to add to the analysis"        ),
-
+            "Configuration file name",
+            optional=False,
+            grouping="1",
+            default="monthly_config.ini",
+            description="Add here any eventuality that you want to add to the analysis",
+        ),
         scripts.String(
-            "Comment", optional=True, grouping="2",
-            description="Add here any eventuality that you want to add to the analysis"        ),
+            "Comment",
+            optional=True,
+            grouping="2",
+            description="Add here any eventuality that you want to add to the analysis",
+        ),
     )
 
     try:
@@ -161,10 +177,11 @@ def run_script():
 
         logger.info(f"Connection success: {conn.isConnected()}")
 
-        datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
+        datasets = conn.getObjects(
+            "Dataset", script_params["IDs"]
+        )  # generator of datasets
 
         for dataset in datasets:
-
             # Get the project / microscope
             microscope_prj = dataset.getParent()  # We assume one project per dataset
 
@@ -176,15 +193,15 @@ def run_script():
                     elif ann.getFileName() == device_config_file_name:
                         device_config = _read_config_from_file_ann(ann)
 
-            config = {"main_config": main_config,
-                      "analyses_config": analyses_config,
-                      "device_config": device_config
-                      }
+            config = {
+                "main_config": main_config,
+                "analyses_config": analyses_config,
+                "device_config": device_config,
+            }
 
-            analysis.analyze_dataset(conn=conn,
-                                     script_params=script_params,
-                                     dataset=dataset,
-                                     config=config)
+            analysis.analyze_dataset(
+                conn=conn, script_params=script_params, dataset=dataset, config=config
+            )
 
         logger.info(f"End time: {datetime.now()}")
 
@@ -200,4 +217,3 @@ def run_script():
 if __name__ == "__main__":
     run_script()
     # run_script_local()
-

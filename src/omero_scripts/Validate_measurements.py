@@ -39,26 +39,29 @@ from datetime import datetime
 
 # Creating logging services
 import logging
-logger = logging.getLogger('metrics')
+
+logger = logging.getLogger("metrics")
 logger.setLevel(logging.DEBUG)
 
 METRICS_GENERATED_TAG_ID = 1284  # This has to go into some installation configuration
 
-UNVALIDATED_NAMESPACE_PREFIX = 'metrics/analyzed'
-VALIDATED_NAMESPACE_PREFIX = 'metrics/validated'
+UNVALIDATED_NAMESPACE_PREFIX = "metrics/analyzed"
+VALIDATED_NAMESPACE_PREFIX = "metrics/validated"
 
 
 def _replace_namespace(annotation, count):
     curr_namespace = annotation.getNs()
-    new_namespace = curr_namespace.replace(UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1)
+    new_namespace = curr_namespace.replace(
+        UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1
+    )
     annotation.setNs(new_namespace)
     annotation.save()
     return count + 1
 
 
 def validate_dataset(dataset):
-    logger.info(f'Validating measurements from Dataset: {dataset.getId()}')
-    logger.info(f'Date and time: {datetime.now()}')
+    logger.info(f"Validating measurements from Dataset: {dataset.getId()}")
+    logger.info(f"Date and time: {datetime.now()}")
 
     changes_count = 0
 
@@ -69,20 +72,33 @@ def validate_dataset(dataset):
     # Currently namespace is annotated in the description
     # TODO: Fix storing laser power measurements without namespace
     for ann in dataset.listAnnotations():
-        if isinstance(ann, gateway.MapAnnotationWrapper) and ann.getDescription().startswith(UNVALIDATED_NAMESPACE_PREFIX):
+        if isinstance(
+            ann, gateway.MapAnnotationWrapper
+        ) and ann.getDescription().startswith(UNVALIDATED_NAMESPACE_PREFIX):
             namespace = ann.getDescription()
-            ann.setNs(namespace.replace(UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1))
-            ann.setDescription('')
+            ann.setNs(
+                namespace.replace(
+                    UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1
+                )
+            )
+            ann.setDescription("")
             changes_count += 1
 
     # Dataset annotations
     for ann in dataset.listAnnotations():
-        if isinstance(ann, (gateway.TagAnnotationWrapper,
-                            gateway.MapAnnotationWrapper,
-                            gateway.FileAnnotationWrapper,
-                            gateway.CommentAnnotationWrapper)) and \
-                ann.getNs() is not None and \
-                ann.getNs().startswith(UNVALIDATED_NAMESPACE_PREFIX):
+        if (
+            isinstance(
+                ann,
+                (
+                    gateway.TagAnnotationWrapper,
+                    gateway.MapAnnotationWrapper,
+                    gateway.FileAnnotationWrapper,
+                    gateway.CommentAnnotationWrapper,
+                ),
+            )
+            and ann.getNs() is not None
+            and ann.getNs().startswith(UNVALIDATED_NAMESPACE_PREFIX)
+        ):
             changes_count = _replace_namespace(ann, changes_count)
 
     # TODO: Decide if we are creating a validated tag
@@ -95,13 +111,19 @@ def validate_dataset(dataset):
     # File and map annotations on rest of images
     for image in dataset.listChildren():
         for ann in image.listAnnotations():
-            if isinstance(ann, (gateway.TagAnnotationWrapper,
-                                gateway.MapAnnotationWrapper,
-                                gateway.FileAnnotationWrapper)) and \
-                    ann.getNs() is not None and \
-                    ann.getNs().startswith(UNVALIDATED_NAMESPACE_PREFIX):
+            if (
+                isinstance(
+                    ann,
+                    (
+                        gateway.TagAnnotationWrapper,
+                        gateway.MapAnnotationWrapper,
+                        gateway.FileAnnotationWrapper,
+                    ),
+                )
+                and ann.getNs() is not None
+                and ann.getNs().startswith(UNVALIDATED_NAMESPACE_PREFIX)
+            ):
                 changes_count = _replace_namespace(ann, changes_count)
-
 
     # TODO: Rois are not having a namespace. Is there another possibility to secure them?
     # # Delete all rois
@@ -112,31 +134,35 @@ def validate_dataset(dataset):
     #     if len(rois_ids) > 1:
     #         connection.deleteObjects('Roi', rois_ids, wait=True)
 
-    logger.info(f'Nr of validated annotations: {changes_count}')
+    logger.info(f"Nr of validated annotations: {changes_count}")
 
 
 def run_script_local():
     from credentials import USER, PASSWORD, GROUP, PORT, HOST
-    conn = gateway.BlitzGateway(username=USER,
-                                passwd=PASSWORD,
-                                group=GROUP,
-                                port=PORT,
-                                host=HOST)
+
+    conn = gateway.BlitzGateway(
+        username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
+    )
 
     script_params = {
-                     'IDs': [1],
-                     # 'IDs': [154],
-                     'Confirm validation': True}
+        "IDs": [1],
+        # 'IDs': [154],
+        "Confirm validation": True,
+    }
 
     try:
         conn.connect()
         # Verify user is part of metrics group by checking current group. If not, abort the script
-        if conn.getGroupFromContext().getName() != 'metrics':
-            raise PermissionError('You are not authorized to run this script in the current context.')
+        if conn.getGroupFromContext().getName() != "metrics":
+            raise PermissionError(
+                "You are not authorized to run this script in the current context."
+            )
 
-        logger.info(f'Connection success: {conn.isConnected()}')
+        logger.info(f"Connection success: {conn.isConnected()}")
 
-        datasets = conn.getObjects('Dataset', script_params['IDs'])  # generator of datasets
+        datasets = conn.getObjects(
+            "Dataset", script_params["IDs"]
+        )  # generator of datasets
 
         for dataset in datasets:
             validate_dataset(dataset=dataset)
@@ -145,26 +171,29 @@ def run_script_local():
 
 
 def run_script():
-
     client = scripts.client(
-        'Clean_Datasets.py',
+        "Clean_Datasets.py",
         """This script is deleting all measurements made by omero.metrics from the selected datasets.
         For more information check \n
         http://www.mri.cnrs.fr\n
         Copyright: Write here some copyright info""",  # TODO: copyright info
-
         scripts.String(
-            "Data_Type", optional=False, grouping="1",
-            description="The data you want to work with.", values=[rstring('Dataset')],
-            default="Dataset"),
-
+            "Data_Type",
+            optional=False,
+            grouping="1",
+            description="The data you want to work with.",
+            values=[rstring("Dataset")],
+            default="Dataset",
+        ),
         scripts.List(
-            "IDs", optional=False, grouping="1",
-            description="List of Dataset IDs").ofType(rlong(0)),
-
+            "IDs", optional=False, grouping="1", description="List of Dataset IDs"
+        ).ofType(rlong(0)),
         scripts.Bool(
-            'Confirm validation', optional=False, grouping='1', default=False,
-            description="Confirm that you want to validate metrics' measurements."
+            "Confirm validation",
+            optional=False,
+            grouping="1",
+            default=False,
+            description="Confirm that you want to validate metrics' measurements.",
         ),
     )
 
@@ -174,31 +203,35 @@ def run_script():
             if client.getInput(key):
                 script_params[key] = client.getInput(key, unwrap=True)
 
-        if script_params['Confirm validation']:
-            logger.info(f'Validation started using parameters: \n{script_params}')
+        if script_params["Confirm validation"]:
+            logger.info(f"Validation started using parameters: \n{script_params}")
 
             conn = gateway.BlitzGateway(client_obj=client)
 
             # Verify user is part of metrics group by checking current group. If not, abort the script
-            if conn.getGroupFromContext().getName() != 'metrics':
-                raise PermissionError('You are not authorized to run this script in the current context.')
+            if conn.getGroupFromContext().getName() != "metrics":
+                raise PermissionError(
+                    "You are not authorized to run this script in the current context."
+                )
 
-            logger.info(f'Connection success: {conn.isConnected()}')
+            logger.info(f"Connection success: {conn.isConnected()}")
 
-            datasets = conn.getObjects('Dataset', script_params['IDs'])  # generator of datasets
+            datasets = conn.getObjects(
+                "Dataset", script_params["IDs"]
+            )  # generator of datasets
 
             for dataset in datasets:
                 validate_dataset(dataset=dataset)
         else:
-            logger.info('Validation was not confirmed.')
+            logger.info("Validation was not confirmed.")
 
-        logger.info(f'End time: {datetime.now()}')
+        logger.info(f"End time: {datetime.now()}")
 
     finally:
-        logger.info('Closing connection')
+        logger.info("Closing connection")
         client.closeSession()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # run_script()
     run_script_local()

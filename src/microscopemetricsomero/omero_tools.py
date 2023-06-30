@@ -10,71 +10,82 @@ from pandas import DataFrame
 
 from omero.gateway import BlitzGateway
 from omero.constants import metadata, namespaces
-from omero.gateway import TagAnnotationWrapper, \
-    MapAnnotationWrapper, \
-    FileAnnotationWrapper, \
-    CommentAnnotationWrapper, \
-    RoiWrapper, \
-    ImageWrapper, \
-    DatasetWrapper, \
-    ProjectWrapper
-from omero.model import enums, \
-    RoiI, \
-    EllipseI, \
-    PointI, \
-    LineI, \
-    MaskI, \
-    RectangleI, \
-    PolygonI, \
-    LengthI, \
-    ImageI, \
-    DatasetI, \
-    ProjectI, \
-    OriginalFileI
+from omero.gateway import (
+    TagAnnotationWrapper,
+    MapAnnotationWrapper,
+    FileAnnotationWrapper,
+    CommentAnnotationWrapper,
+    RoiWrapper,
+    ImageWrapper,
+    DatasetWrapper,
+    ProjectWrapper,
+)
+from omero.model import (
+    enums,
+    RoiI,
+    EllipseI,
+    PointI,
+    LineI,
+    MaskI,
+    RectangleI,
+    PolygonI,
+    LengthI,
+    ImageI,
+    DatasetI,
+    ProjectI,
+    OriginalFileI,
+)
 from omero.rtypes import rlong, rdouble, rint, rstring
 from omero import grid
 
 
-DTYPES_NP_TO_OMERO = {'int8': enums.PixelsTypeint8,
-                      'int16': enums.PixelsTypeint16,
-                      'uint16': enums.PixelsTypeuint16,
-                      'int32': enums.PixelsTypeint32,
-                      'float_': enums.PixelsTypefloat,
-                      'float8': enums.PixelsTypefloat,
-                      'float16': enums.PixelsTypefloat,
-                      'float32': enums.PixelsTypefloat,
-                      'float64': enums.PixelsTypedouble,
-                      'complex_': enums.PixelsTypecomplex,
-                      'complex64': enums.PixelsTypecomplex}
+DTYPES_NP_TO_OMERO = {
+    "int8": enums.PixelsTypeint8,
+    "int16": enums.PixelsTypeint16,
+    "uint16": enums.PixelsTypeuint16,
+    "int32": enums.PixelsTypeint32,
+    "float_": enums.PixelsTypefloat,
+    "float8": enums.PixelsTypefloat,
+    "float16": enums.PixelsTypefloat,
+    "float32": enums.PixelsTypefloat,
+    "float64": enums.PixelsTypedouble,
+    "complex_": enums.PixelsTypecomplex,
+    "complex64": enums.PixelsTypecomplex,
+}
 
-DTYPES_OMERO_TO_NP = {enums.PixelsTypeint8: 'int8',
-                      enums.PixelsTypeuint8: 'uint8',
-                      enums.PixelsTypeint16: 'int16',
-                      enums.PixelsTypeuint16: 'uint16',
-                      enums.PixelsTypeint32: 'int32',
-                      enums.PixelsTypeuint32: 'uint32',
-                      enums.PixelsTypefloat: 'float32',
-                      enums.PixelsTypedouble: 'double'}
-
-
-COLUMN_TYPES = {'string': grid.StringColumn,
-                'long': grid.LongColumn,
-                'bool': grid.BoolColumn,
-                'double': grid.DoubleColumn,
-                'long_array': grid.LongArrayColumn,
-                'float_array': grid.FloatArrayColumn,
-                'double_array': grid.DoubleArrayColumn,
-                'image': grid.ImageColumn,
-                'dataset': grid.DatasetColumn,
-                'plate': grid.PlateColumn,
-                'well': grid.WellColumn,
-                'roi': grid.RoiColumn,
-                'mask': grid.MaskColumn,
-                'file': grid.FileColumn,
-                }
+DTYPES_OMERO_TO_NP = {
+    enums.PixelsTypeint8: "int8",
+    enums.PixelsTypeuint8: "uint8",
+    enums.PixelsTypeint16: "int16",
+    enums.PixelsTypeuint16: "uint16",
+    enums.PixelsTypeint32: "int32",
+    enums.PixelsTypeuint32: "uint32",
+    enums.PixelsTypefloat: "float32",
+    enums.PixelsTypedouble: "double",
+}
 
 
-def get_image_intensities(image, z_range=None, c_range=None, t_range=None, y_range=None, x_range=None):
+COLUMN_TYPES = {
+    "string": grid.StringColumn,
+    "long": grid.LongColumn,
+    "bool": grid.BoolColumn,
+    "double": grid.DoubleColumn,
+    "long_array": grid.LongArrayColumn,
+    "float_array": grid.FloatArrayColumn,
+    "double_array": grid.DoubleArrayColumn,
+    "image": grid.ImageColumn,
+    "dataset": grid.DatasetColumn,
+    "plate": grid.PlateColumn,
+    "well": grid.WellColumn,
+    "roi": grid.RoiColumn,
+    "mask": grid.MaskColumn,
+    "file": grid.FileColumn,
+}
+
+
+def get_image_intensities(
+    image, z_range=None, c_range=None, t_range=None, y_range=None, x_range=None
+):
     """Returns a numpy array containing the intensity values of the image
     Returns an array with dimensions arranged as zctyx
     """
@@ -97,7 +108,7 @@ def get_image_intensities(image, z_range=None, c_range=None, t_range=None, y_ran
             if type(r) is int:
                 ranges[dim] = range(r, r + 1)
             elif type(r) is not tuple:
-                raise TypeError('Range is not provided as a tuple.')
+                raise TypeError("Range is not provided as a tuple.")
             else:  # range is a tuple
                 if len(r) == 1:
                     ranges[dim] = range(r[0])
@@ -110,7 +121,13 @@ def get_image_intensities(image, z_range=None, c_range=None, t_range=None, y_ran
             if not 1 <= ranges[dim].stop <= image_shape[dim]:
                 raise IndexError("Specified range is outside of the image dimensions")
 
-    output_shape = (len(ranges[0]), len(ranges[1]), len(ranges[2]), len(ranges[3]), len(ranges[4]))
+    output_shape = (
+        len(ranges[0]),
+        len(ranges[1]),
+        len(ranges[2]),
+        len(ranges[3]),
+        len(ranges[4]),
+    )
     nr_planes = output_shape[0] * output_shape[1] * output_shape[2]
     zct_list = list(product(ranges[0], ranges[1], ranges[2]))
 
@@ -119,8 +136,9 @@ def get_image_intensities(image, z_range=None, c_range=None, t_range=None, y_ran
 
     # intensities = np.zeros(output_shape, dtype=data_type)
 
-    intensities = np.zeros(shape=(nr_planes, output_shape[3], output_shape[4]),
-                           dtype=data_type)
+    intensities = np.zeros(
+        shape=(nr_planes, output_shape[3], output_shape[4]), dtype=data_type
+    )
     if whole_planes:
         np.stack(list(pixels.getPlanes(zctList=zct_list)), out=intensities)
     else:
@@ -150,7 +168,6 @@ def create_image(
     image_name,
     description,
 ):
-
     zct_list = list(
         product(
             range(image.shape[0]),
@@ -205,22 +222,25 @@ def create_roi(conn, image, shapes, name, description):
 
 
 def _rgba_to_int(red, green, blue, alpha=255):
-    """ Return the color as an Integer in RGBA encoding """
+    """Return the color as an Integer in RGBA encoding"""
     r = red << 24
     g = green << 16
     b = blue << 8
     a = alpha
     rgba_int = sum([r, g, b, a])
-    if rgba_int > (2**31-1):       # convert to signed 32-bit int
+    if rgba_int > (2**31 - 1):  # convert to signed 32-bit int
         rgba_int = rgba_int - 2**32
 
     return rgba_int
 
 
-def _set_shape_properties(shape, name=None,
-                          fill_color=(10, 10, 10, 10),
-                          stroke_color=(255, 255, 255, 255),
-                          stroke_width=1, ):
+def _set_shape_properties(
+    shape,
+    name=None,
+    fill_color=(10, 10, 10, 10),
+    stroke_color=(255, 255, 255, 255),
+    stroke_width=1,
+):
     if name:
         shape.setTextValue(rstring(name))
     shape.setFillColor(rint(_rgba_to_int(*fill_color)))
@@ -228,8 +248,17 @@ def _set_shape_properties(shape, name=None,
     shape.setStrokeWidth(LengthI(stroke_width, enums.UnitsLength.PIXEL))
 
 
-def _create_shape_point(x_pos, y_pos, z_pos=None, c_pos=None, t_pos=None, name=None,
-                       stroke_color=(255, 255, 255, 255), fill_color=(10, 10, 10, 20), stroke_width=1):
+def _create_shape_point(
+    x_pos,
+    y_pos,
+    z_pos=None,
+    c_pos=None,
+    t_pos=None,
+    name=None,
+    stroke_color=(255, 255, 255, 255),
+    fill_color=(10, 10, 10, 20),
+    stroke_width=1,
+):
     point = PointI()
     point.x = rdouble(x_pos)
     point.y = rdouble(y_pos)
@@ -239,17 +268,29 @@ def _create_shape_point(x_pos, y_pos, z_pos=None, c_pos=None, t_pos=None, name=N
         point.theC = rint(c_pos)
     if t_pos is not None:
         point.theT = rint(t_pos)
-    _set_shape_properties(shape=point,
-                          name=name,
-                          stroke_color=stroke_color,
-                          stroke_width=stroke_width,
-                          fill_color=fill_color)
+    _set_shape_properties(
+        shape=point,
+        name=name,
+        stroke_color=stroke_color,
+        stroke_width=stroke_width,
+        fill_color=fill_color,
+    )
 
     return point
 
 
-def _create_shape_line(x1_pos, y1_pos, x2_pos, y2_pos, c_pos=None, z_pos=None, t_pos=None,
-                      name=None, stroke_color=(255, 255, 255, 255), stroke_width=1):
+def _create_shape_line(
+    x1_pos,
+    y1_pos,
+    x2_pos,
+    y2_pos,
+    c_pos=None,
+    z_pos=None,
+    t_pos=None,
+    name=None,
+    stroke_color=(255, 255, 255, 255),
+    stroke_width=1,
+):
     line = LineI()
     line.x1 = rdouble(x1_pos)
     line.x2 = rdouble(x2_pos)
@@ -259,17 +300,24 @@ def _create_shape_line(x1_pos, y1_pos, x2_pos, y2_pos, c_pos=None, z_pos=None, t
     line.theT = rint(t_pos)
     if c_pos is not None:
         line.theC = rint(c_pos)
-    _set_shape_properties(line, name=name,
-                          stroke_color=stroke_color,
-                          stroke_width=stroke_width)
+    _set_shape_properties(
+        line, name=name, stroke_color=stroke_color, stroke_width=stroke_width
+    )
     return line
 
 
-def _create_shape_rectangle(x_pos, y_pos, width, height, z_pos, t_pos,
-                           rectangle_name=None,
-                           fill_color=(10, 10, 10, 255),
-                           stroke_color=(255, 255, 255, 255),
-                           stroke_width=1):
+def _create_shape_rectangle(
+    x_pos,
+    y_pos,
+    width,
+    height,
+    z_pos,
+    t_pos,
+    rectangle_name=None,
+    fill_color=(10, 10, 10, 255),
+    stroke_color=(255, 255, 255, 255),
+    stroke_width=1,
+):
     rect = RectangleI()
     rect.x = rdouble(x_pos)
     rect.y = rdouble(y_pos)
@@ -277,18 +325,28 @@ def _create_shape_rectangle(x_pos, y_pos, width, height, z_pos, t_pos,
     rect.height = rdouble(height)
     rect.theZ = rint(z_pos)
     rect.theT = rint(t_pos)
-    _set_shape_properties(shape=rect, name=rectangle_name,
-                          fill_color=fill_color,
-                          stroke_color=stroke_color,
-                          stroke_width=stroke_width)
+    _set_shape_properties(
+        shape=rect,
+        name=rectangle_name,
+        fill_color=fill_color,
+        stroke_color=stroke_color,
+        stroke_width=stroke_width,
+    )
     return rect
 
 
-def _create_shape_ellipse(x_pos, y_pos, x_radius, y_radius, z_pos, t_pos,
-                         ellipse_name=None,
-                         fill_color=(10, 10, 10, 255),
-                         stroke_color=(255, 255, 255, 255),
-                         stroke_width=1):
+def _create_shape_ellipse(
+    x_pos,
+    y_pos,
+    x_radius,
+    y_radius,
+    z_pos,
+    t_pos,
+    ellipse_name=None,
+    fill_color=(10, 10, 10, 255),
+    stroke_color=(255, 255, 255, 255),
+    stroke_width=1,
+):
     ellipse = EllipseI()
     ellipse.setX(rdouble(x_pos))
     ellipse.setY(rdouble(y_pos))  # TODO: setters and getters everywhere
@@ -296,33 +354,45 @@ def _create_shape_ellipse(x_pos, y_pos, x_radius, y_radius, z_pos, t_pos,
     ellipse.radiusY = rdouble(y_radius)
     ellipse.theZ = rint(z_pos)
     ellipse.theT = rint(t_pos)
-    _set_shape_properties(ellipse, name=ellipse_name,
-                          fill_color=fill_color,
-                          stroke_color=stroke_color,
-                          stroke_width=stroke_width)
+    _set_shape_properties(
+        ellipse,
+        name=ellipse_name,
+        fill_color=fill_color,
+        stroke_color=stroke_color,
+        stroke_width=stroke_width,
+    )
     return ellipse
 
 
-def _create_shape_polygon(points_list, z_pos, t_pos,
-                         polygon_name=None,
-                         fill_color=(10, 10, 10, 255),
-                         stroke_color=(255, 255, 255, 255),
-                         stroke_width=1):
+def _create_shape_polygon(
+    points_list,
+    z_pos,
+    t_pos,
+    polygon_name=None,
+    fill_color=(10, 10, 10, 255),
+    stroke_color=(255, 255, 255, 255),
+    stroke_width=1,
+):
     polygon = PolygonI()
-    points_str = "".join(["".join([str(x), ',', str(y), ', ']) for x, y in points_list])[:-2]
+    points_str = "".join(
+        ["".join([str(x), ",", str(y), ", "]) for x, y in points_list]
+    )[:-2]
     polygon.points = rstring(points_str)
     polygon.theZ = rint(z_pos)
     polygon.theT = rint(t_pos)
-    _set_shape_properties(polygon, name=polygon_name,
-                          fill_color=fill_color,
-                          stroke_color=stroke_color,
-                          stroke_width=stroke_width)
+    _set_shape_properties(
+        polygon,
+        name=polygon_name,
+        fill_color=fill_color,
+        stroke_color=stroke_color,
+        stroke_width=stroke_width,
+    )
     return polygon
 
 
-def _create_shape_mask(mask_array, x_pos, y_pos, z_pos, t_pos,
-                      mask_name=None,
-                      fill_color=(10, 10, 10, 255)):
+def _create_shape_mask(
+    mask_array, x_pos, y_pos, z_pos, t_pos, mask_name=None, fill_color=(10, 10, 10, 255)
+):
     mask = MaskI()
     mask.setX(rdouble(x_pos))
     mask.setY(rdouble(y_pos))
@@ -400,6 +470,7 @@ def create_key_value(
 
     return map_ann
 
+
 def _create_column(data_type, kwargs):
     column_class = COLUMN_TYPES[data_type]
 
@@ -415,58 +486,69 @@ def _create_columns(table):
     for i, (cn, v) in enumerate(zip(column_names, values)):
         v_type = type(v[0])
         if v_type == str:
-            size = len(max(v, key=len)) * 2  # We assume here that the max size is double of what we really have...
-            args = {'name': cn, 'size': size, 'values': v}
-            columns.append(_create_column(data_type='string', kwargs=args))
+            size = (
+                len(max(v, key=len)) * 2
+            )  # We assume here that the max size is double of what we really have...
+            args = {"name": cn, "size": size, "values": v}
+            columns.append(_create_column(data_type="string", kwargs=args))
         elif v_type == int:
             if cn.lower() in ["imageid", "image id", "image_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='image', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="image", kwargs=args))
             elif cn.lower() in ["datasetid", "dataset id", "dataset_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='dataset', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="dataset", kwargs=args))
             elif cn.lower() in ["plateid", "plate id", "plate_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='plate', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="plate", kwargs=args))
             elif cn.lower() in ["wellid", "well id", "well_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='well', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="well", kwargs=args))
             elif cn.lower() in ["roiid", "roi id", "roi_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='roi', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="roi", kwargs=args))
             elif cn.lower() in ["mask", "maskid", "mask id", "mask_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='mask', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="mask", kwargs=args))
             elif cn.lower() in ["fileid", "file id", "file_id"]:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='file', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="file", kwargs=args))
             else:
-                args = {'name': cn, 'values': v}
-                columns.append(_create_column(data_type='long', kwargs=args))
+                args = {"name": cn, "values": v}
+                columns.append(_create_column(data_type="long", kwargs=args))
         elif v_type == float:
-            args = {'name': cn, 'values': v}
-            columns.append(_create_column(data_type='double', kwargs=args))
+            args = {"name": cn, "values": v}
+            columns.append(_create_column(data_type="double", kwargs=args))
         elif v_type == bool:
-            args = {'name': cn, 'values': v}
-            columns.append(_create_column(data_type='string', kwargs=args))
+            args = {"name": cn, "values": v}
+            columns.append(_create_column(data_type="string", kwargs=args))
         elif v_type in [ImageWrapper, ImageI]:
-            args = {'name': cn, 'values': [img.getId() for img in v]}
-            columns.append(_create_column(data_type='image', kwargs=args))
+            args = {"name": cn, "values": [img.getId() for img in v]}
+            columns.append(_create_column(data_type="image", kwargs=args))
         elif v_type in [RoiWrapper, RoiI]:
-            args = {'name': cn, 'values': [roi.getId() for roi in v]}
-            columns.append(_create_column(data_type='roi', kwargs=args))
+            args = {"name": cn, "values": [roi.getId() for roi in v]}
+            columns.append(_create_column(data_type="roi", kwargs=args))
         elif isinstance(v_type, (list, tuple)):  # We are creating array columns
             raise NotImplementedError(f"Array columns are not implemented. Column {cn}")
         else:
-            raise TypeError(f'Could not detect column datatype for column {cn}')
+            raise TypeError(f"Could not detect column datatype for column {cn}")
 
     return columns
 
 
-def create_table(conn:BlitzGateway, table: DataFrame, table_name, omero_object, table_description, namespace=None):
+def create_table(
+    conn: BlitzGateway,
+    table: DataFrame,
+    table_name,
+    omero_object,
+    table_description,
+    namespace=None,
+):
     """Creates a table annotation from a pandas dataframe"""
 
-    table_name = f'{table_name}_{"".join([choice(ascii_letters) for _ in range(32)])}.h5'
+    table_name = (
+        f'{table_name}_{"".join([choice(ascii_letters) for _ in range(32)])}.h5'
+    )
 
     columns = _create_columns(table)
 
@@ -482,7 +564,9 @@ def create_table(conn:BlitzGateway, table: DataFrame, table_name, omero_object, 
     if namespace is not None:
         file_ann.setNs(namespace)
     file_ann.setDescription(table_description)
-    file_ann.setFile(OriginalFileI(original_file.id.val, False))  # TODO: try to get this with a wrapper
+    file_ann.setFile(
+        OriginalFileI(original_file.id.val, False)
+    )  # TODO: try to get this with a wrapper
     file_ann.save()
 
     _link_annotation(omero_object, file_ann)
