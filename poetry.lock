@@ -779,22 +779,19 @@ files = [
 
 [[package]]
 name = "ezomero"
-version = "2.0.0"
+version = "1.1.1"
 description = "A suite of convenience functions for working with OMERO. Written and maintained by the Research IT team at The Jackson Laboratory."
 category = "dev"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.6"
 files = [
-    {file = "ezomero-2.0.0-py3-none-any.whl", hash = "sha256:846672eb3b4c73b1d6c12999c2ea91030a229603306d54f6cef35955b9f54a74"},
-    {file = "ezomero-2.0.0.tar.gz", hash = "sha256:3fbaf9f500280bba8d70982be9c7e66e7f5b6b10e4a51fbfea58904614d54f52"},
+    {file = "ezomero-1.1.1-py3-none-any.whl", hash = "sha256:c59036e31dd0c69dc9c9e116c8eaa7bf3533db30f325d4330169d6b1d6aae2c4"},
+    {file = "ezomero-1.1.1.tar.gz", hash = "sha256:3df305360fe132345c00b19b4318e7797acea82141a2bae99972a3e0e1190445"},
 ]
 
 [package.dependencies]
-numpy = ">=1.22"
-omero-py = "5.13.1"
-
-[package.extras]
-tables = ["pandas"]
+numpy = "*"
+omero-py = "*"
 
 [[package]]
 name = "filelock"
@@ -1847,14 +1844,14 @@ files = [
 
 [[package]]
 name = "omero-py"
-version = "5.13.1"
+version = "5.14.0"
 description = "Python bindings to the OMERO.blitz server"
 category = "main"
 optional = false
 python-versions = ">=3"
 files = [
-    {file = "omero-py-5.13.1.tar.gz", hash = "sha256:3be7f973fc7f52fb25ace7b053c1ec5424d4f71a35ed1cdcdc2973d2db73332a"},
-    {file = "omero_py-5.13.1-py3-none-any.whl", hash = "sha256:d4df1587089fe3c3a3706087cc185d350ff3efeec54b4d8a9c23496f9ceb7aff"},
+    {file = "omero-py-5.14.0.tar.gz", hash = "sha256:8bc4ee7a377c34180db837a1c46e2f627e5cbe9438d267cfc729188985ec0266"},
+    {file = "omero_py-5.14.0-py3-none-any.whl", hash = "sha256:10e710984301823cf8cc56637d296f8bb180e9ba9bc5da8dbb0e2fd996ccf8b5"},
 ]
 
 [package.dependencies]
@@ -3676,4 +3673,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8 <=3.11"
-content-hash = "66745f2ab1152036577f7f123bc0afe72ec1eb19b058c0a51d267a823581cdbf"
+content-hash = "d263567d03f83139c1269467b7eaa83c8f2010e1a884d26487a7c714252e4f3a"
