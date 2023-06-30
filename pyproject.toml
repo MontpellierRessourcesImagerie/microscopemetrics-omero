@@ -17,14 +17,13 @@ testpaths = [
 [tool.poetry.dependencies]
 python = ">=3.8 <=3.11"
 microscopemetrics = { git = "https://github.com/juliomateoslangerak/microscope-metrics.git" }
-omero-py = "^5.14.0"
+omero-py = "^5.13.0"
 pyyaml = "^6.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^6.2.0"
 pytest-cov = "^4.0.0"
 tox = "^3.26.0"
-ezomero = "1.2.1"
 
 [tool.poetry.group.dev.dependencies]
 blacked = "^0.1.0-alpha.4"
