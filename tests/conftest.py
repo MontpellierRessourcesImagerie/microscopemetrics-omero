@@ -199,6 +199,10 @@ def users_groups(conn, omero_params):
                         port,
                     ]
                 )
+        uid = ezomero.get_user_id(conn, user)
+        user_info.append([user, uid])
+
+    return group_info, user_info
 
 
 @pytest.fixture(scope="session")
