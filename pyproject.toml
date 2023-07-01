@@ -14,7 +14,8 @@ testpaths = [
     "tests"
 ]
 filterwarnings = [
-    'ignore:.*U.*mode is deprecated:DeprecationWarning',
+    'ignore:.*invalid escape sequence:DeprecationWarning',
+    'ignore:.*the imp module is deprecated in favour of importlib:DeprecationWarning',
 ]
 
 [tool.poetry.dependencies]
