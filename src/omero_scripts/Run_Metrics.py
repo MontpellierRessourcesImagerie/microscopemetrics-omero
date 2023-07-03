@@ -45,7 +45,7 @@ import yaml
 from omero.rtypes import rlong, rstring
 
 # import metrics
-import src.microscopemetricsomero.analysis as analysis
+import src.microscopemetrics_omeroomero.analysis as analysis
 
 # Creating logging services
 logger = logging.getLogger("microscopemetrics")
@@ -107,7 +107,7 @@ def run_script_local():
         )  # generator of datasets
 
         for dataset in datasets:
-            analysis.analyze_dataset(
+            process.analyze_dataset(
                 conn=conn,
                 script_params=script_params,
                 dataset=dataset,
@@ -200,7 +200,7 @@ def run_script():
                 "device_config": device_config,
             }
 
-            analysis.analyze_dataset(
+            process.analyze_dataset(
                 conn=conn, script_params=script_params, dataset=dataset, config=config
             )
 
