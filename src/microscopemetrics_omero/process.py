@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime
 
+
+
 import omero_tools as omero_tools
 from microscopemetrics import samples
 from omero.gateway import BlitzGateway, ImageWrapper
@@ -9,7 +11,7 @@ from omero.gateway import BlitzGateway, ImageWrapper
 module_logger = logging.getLogger("microscopemetricsomero.analysis")
 
 # Namespace constants
-NAMESPACE_PREFIX = "microscope_metrics"
+NAMESPACE_PREFIX = "microscopemetrics"
 NAMESPACE_ANALYZED = "analyzed"
 NAMESPACE_VALIDATED = "validated"
 # TODO: Add a special case editable
@@ -65,7 +67,7 @@ def _analyze_image(
         conn=conn,
         annotation=generate_analysis_annotation(start_time, end_time, analysis_config),
         omero_object=image,
-        annotation_name="microscope-metrics analysis metadata",
+        annotation_name="microscopemetrics analysis metadata",
         namespace=generate_namespace(),
     )
 
@@ -73,7 +75,7 @@ def _analyze_image(
 def _dump_image_analysis(
     conn: BlitzGateway,
     image: ImageWrapper,
-    analysis: microscopemetrics.samples.Analysis,
+    analysis: samples.Analysis,
 ) -> None:
     property_types_to_dump = {
         "Image": _dump_output_image,

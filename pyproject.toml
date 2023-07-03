@@ -1,11 +1,15 @@
 [tool.poetry]
-name = "microscopemetricsomero"
+name = "microscopemetrics-omero"
 version = "0.1.0"
 description = "A package to compute metrics on OMERO images using micrsocope-metrics"
-authors = ["Julio Mateos Langerak <julio.mateos-langerak@igh.cnrs.fr>"]
+authors = [
+    "Julio Mateos Langerak <julio.mateos-langerak@igh.cnrs.fr>"
+]
 license = "GPL-3.0-only"
 readme = "README.md"
-packages = [{include = "src/microscopemetricsomero"}]
+#packages = [
+#    {include = "microscopemetrics_omero", from = "src"}
+#]
 keywords = ["microscopy", "metrology"]
 
 [tool.pytest.ini_options]
