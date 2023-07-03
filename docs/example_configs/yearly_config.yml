@@ -1,17 +1,21 @@
 config_version: 1.0.0
 metrics_generated_tag_id: 1284
 
-DATASET:
-  # Creates a user modifiable key-value pairs annotation so the user can fill measurements
-  analyze_laser_power_measurement: true
-  # Define which laser wavelengths you want to measure
-  laser_power_measurement_wavelengths: [405, 488, 532, 561, 642]
-  # What are the units of those measurements: mW, W,... User SI symbols only
-  laser_power_measurement_units: mW
-  # What is the method that has been used to measure the power: back_aperture, source, fiber_exit, objective_lens_exit
-  laser_power_measurement_method: back_aperture
+#DATASET:
+#  # Creates a user modifiable key-value pairs annotation so the user can fill measurements
+#  analyze_laser_power_measurement: true
+#  # Define which laser wavelengths you want to measure
+#  laser_power_measurement_wavelengths: [405, 488, 532, 561, 642]
+#  # What are the units of those measurements: mW, W,... User SI symbols only
+#  laser_power_measurement_units: mW
+#  # What is the method that has been used to measure the power: back_aperture, source, fiber_exit, objective_lens_exit
+#  laser_power_measurement_method: back_aperture
 
-ANALYSES:
+study:  # This is the OMERO project
+  name: resolution
+  description: Follow the resolution of a microscope over time
+
+assays:  # These are the OMERO datasets. One dataset per type of analysis
   Argolight_B:
     do_analysis: true
     sample: argolight
