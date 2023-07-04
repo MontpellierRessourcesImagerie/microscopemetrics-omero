@@ -80,6 +80,40 @@ COLUMN_TYPES = {
     "file": grid.FileColumn,
 }
 
+def get_image_shape(image):
+    try:
+        image_shape = (image.getSizeZ(),
+                       image.getSizeC(),
+                       image.getSizeT(),
+                       image.getSizeY(),
+                       image.getSizeX())
+    except Exception as e:
+        raise e
+
+    return image_shape
+
+
+def get_pixel_size(image, order='ZXY'):
+    pixels = image.getPrimaryPixels()
+
+    order = order.upper()
+    if order not in ['ZXY', 'ZYX', 'XYZ', 'XZY', 'YXZ', 'YZX']:
+        raise ValueError('The provided order for the axis is not valid')
+    pixel_sizes = tuple()
+    for a in order:
+        pixel_sizes += (getattr(pixels, f'getPhysicalSize{a}')().getValue(), )
+    return pixel_sizes
+
+
+def get_pixel_size_units(image):
+    pixels = image.getPrimaryPixels()
+
+    return (
+        pixels.getPhysicalSizeX().getUnit().name,
+        pixels.getPhysicalSizeY().getUnit().name,
+        pixels.getPhysicalSizeZ().getUnit().name,
+    )
+
 
 def get_image_intensities(
     image, z_range=None, c_range=None, t_range=None, y_range=None, x_range=None
