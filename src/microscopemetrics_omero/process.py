@@ -24,7 +24,7 @@ ANALYSIS_CLASS_MAPPINGS = {
 }
 
 
-def generate_namespace(sections: list = [NAMESPACE_PREFIX, NAMESPACE_ANALYZED]) -> str:
+def _generate_namespace(sections: list = (NAMESPACE_PREFIX, NAMESPACE_ANALYZED)) -> str:
     # TODO: get version directly from package
     return "/".join(sections)
 
