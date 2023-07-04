@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Union
 
-import omero_tools as omero_tools
+from microscopemetrics_omero import omero_tools
 from microscopemetrics import samples
 from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 

@@ -2,8 +2,7 @@ import logging
 from datetime import datetime
 
 
-import omero_tools as omero_tools
-from microscopemetrics import samples
+from microscopemetrics_omero import omero_tools
 from omero.gateway import BlitzGateway, ImageWrapper
 import numpy as np
 
