@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
-
-
+from typing import Union
 
 import omero_tools as omero_tools
 from microscopemetrics import samples
@@ -10,7 +9,7 @@ from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWra
 from dump import dump_image_process
 
 # Creating logging services
-module_logger = logging.getLogger("microscopemetricsomero.analysis")
+module_logger = logging.getLogger("microscopemetrics_omero.process")
 
 # Namespace constants
 NAMESPACE_PREFIX = "microscopemetrics"
@@ -30,16 +29,28 @@ def generate_namespace(sections: list = [NAMESPACE_PREFIX, NAMESPACE_ANALYZED]) 
     return "/".join(sections)
 
 
-def generate_analysis_annotation(start_time, end_time, analysis_config) -> dict:
-    return {
+def _annotate_processing(conn: BlitzGateway,
+                         omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                         start_time,
+                         end_time,
+                         analysis_config) -> None:
+    annotation = {
         "analysis_class": analysis_config["analysis_class"],
         "start_time": str(start_time),
         "end_time": str(end_time),
         **analysis_config["parameters"],
     }
 
+    omero_tools.create_key_value(
+        conn=conn,
+        annotation=annotation,
+        omero_object=omero_object,
+        annotation_name="microscopemetrics processing metadata",
+        namespace=_generate_namespace(),
+    )
 
-def _analyze_image(
+
+def process_image(
     conn: BlitzGateway, image: ImageWrapper, analysis_config: dict
 ) -> None:
     start_time = datetime.now()
@@ -64,10 +75,9 @@ def _analyze_image(
     )
 
     end_time = datetime.now()
-    module_logger.info("Annotating analysis metadata")
-    omero_tools.create_key_value(
+    module_logger.info("Annotating processing metadata")
+    _annotate_processing(
         conn=conn,
-        annotation=generate_analysis_annotation(start_time, end_time, analysis_config),
         omero_object=image,
         start_time=start_time,
         end_time=end_time,
@@ -82,10 +92,10 @@ def process_dataset(conn, script_params, dataset, config):
     module_logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
     module_logger.info(f"Date and time: {datetime.now()}")
 
-    for analysis_name, analysis_config in config["analyses_config"]["ANALYSES"].items():
+    for analysis_name, analysis_config in config["analyses_config"]["assays"].items():
         if analysis_config["do_analysis"]:
             module_logger.info(
-                f"Running analysis {analysis_name} on sample {analysis_config['sample']}"
+                f"Running analysis {analysis_name}..."
             )
 
             images = omero_tools.get_tagged_images_in_dataset(
@@ -93,4 +103,4 @@ def process_dataset(conn, script_params, dataset, config):
             )
 
             for image in images:
-                _analyze_image(conn=conn, image=image, config=analysis_config)
+                process_image(conn=conn, image=image, config=analysis_config)
