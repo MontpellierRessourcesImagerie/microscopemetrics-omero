@@ -1,5 +1,4 @@
 import json
-import logging
 from itertools import product
 from random import choice
 from string import ascii_letters
@@ -7,7 +6,7 @@ from typing import Union
 
 import numpy as np
 from omero import grid
-from omero.constants import metadata, namespaces
+from omero.constants import metadata
 from omero.gateway import (
     BlitzGateway,
     CommentAnnotationWrapper,
@@ -99,7 +98,7 @@ def get_pixel_size(image, order='ZXY'):
     order = order.upper()
     if order not in ['ZXY', 'ZYX', 'XYZ', 'XZY', 'YXZ', 'YZX']:
         raise ValueError('The provided order for the axis is not valid')
-    pixel_sizes = tuple()
+    pixel_sizes = ()
     for a in order:
         pixel_sizes += (getattr(pixels, f'getPhysicalSize{a}')().getValue(), )
     return pixel_sizes
@@ -441,14 +440,14 @@ def _create_shape_mask(
     return mask
 
 
-def create_tag(conn, tag_string, object, description=None):
+def create_tag(conn, tag_string, omero_object, description=None):
     tag_ann = TagAnnotationWrapper(conn)
     tag_ann.setValue(tag_string)
     if description is not None:
         tag_ann.setDescription(description)
     tag_ann.save()
 
-    _link_annotation(object, tag_ann)
+    _link_annotation(omero_object, tag_ann)
 
 
 def _serialize_map_value(value):
