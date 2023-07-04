@@ -103,4 +103,4 @@ def process_dataset(conn, script_params, dataset, config):
             )
 
             for image in images:
-                process_image(conn=conn, image=image, config=analysis_config)
+                process_image(conn=conn, image=image, analysis_config=analysis_config)

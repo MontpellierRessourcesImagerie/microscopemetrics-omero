@@ -58,7 +58,7 @@ def _dump_output_tag(conn, output_tag, object):
     omero_tools.create_tag(
         conn=conn,
         tag_string=output_tag.tag_value,
-        object=object,
+        omero_object=object,
         description=output_tag.description,
     )
 
