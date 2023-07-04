@@ -1,12 +1,8 @@
 import logging
-from datetime import datetime
-
 
 from microscopemetrics_omero import omero_tools
-from omero.gateway import BlitzGateway, ImageWrapper
+from omero.gateway import ImageWrapper
 import numpy as np
-
-from dump import dump_image_process
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetrics_omero.load")
