@@ -12,6 +12,7 @@ def dump_image_process(
     conn: BlitzGateway,
     image: ImageWrapper,
     analysis: samples.Analysis,
+    namespace: str
 ) -> None:
     property_types_to_dump = {
         "Image": _dump_output_image,
@@ -26,13 +27,13 @@ def dump_image_process(
         module_logger.info(
             f"Dumping {output_property.type} {property_name} from analysis {analysis.name}"
         )
-        property_types_to_dump[output_property.type](conn, output_property, image)
+        property_types_to_dump[output_property.type](conn, output_property, image, namespace)
         module_logger.info(
             f"Dumping {output_property.type} {output_property.name} from analysis {analysis.name} completed"
         )
 
 
-def _dump_output_image(conn, output_image, image):
+def _dump_output_image(conn, output_image, image, namespace):
     omero_tools.create_image(
         conn=conn,
         image=output_image.data,
@@ -44,7 +45,7 @@ def _dump_output_image(conn, output_image, image):
     # TODO: We should consider that we might want to add metadata to an output image
 
 
-def _dump_output_roi(conn, output_roi, image):
+def _dump_output_roi(conn, output_roi, image, namespace):
     omero_tools.create_roi(
         conn=conn,
         image=image,
@@ -54,7 +55,7 @@ def _dump_output_roi(conn, output_roi, image):
     )
 
 
-def _dump_output_tag(conn, output_tag, object):
+def _dump_output_tag(conn, output_tag, object, namespace):
     omero_tools.create_tag(
         conn=conn,
         tag_string=output_tag.tag_value,
@@ -63,33 +64,33 @@ def _dump_output_tag(conn, output_tag, object):
     )
 
 
-def _dump_output_key_value(conn, output_key_values, omero_object):
+def _dump_output_key_value(conn, output_key_values, omero_object, namespace):
     omero_tools.create_key_value(
         conn=conn,
         annotation=output_key_values.key_values,
         omero_object=omero_object,
         annotation_name=output_key_values.name,
         annotation_description=output_key_values.description,
-        namespace=generate_namespace(),
+        namespace=namespace,
     )
 
 
-def _dump_output_table(conn, output_table, omero_object):
+def _dump_output_table(conn, output_table, omero_object, namespace):
     omero_tools.create_table(
         conn=conn,
         table=output_table.table,
         table_name=output_table.name,
         omero_object=omero_object,
         table_description=output_table.description,
-        namespace=generate_namespace(),
+        namespace=namespace,
     )
 
 
-def _dump_comment(conn, output_comment, omero_object):
+def _dump_comment(conn, output_comment, omero_object, namespace):
     omero_tools.create_comment(
         conn=conn,
         comment_value=output_comment.comment,
         omero_object=omero_object,
-        namespace=generate_namespace(),
+        namespace=namespace,
     )
 

@@ -68,7 +68,10 @@ def process_image(
 
     analysis.run()
 
-    dump_image_process(conn, image, analysis, analysis_config)
+    dump_image_process(conn=conn,
+                       image=image,
+                       analysis=analysis,
+                       namespace=_generate_namespace())
 
     module_logger.info(
         f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed"
