@@ -7,9 +7,6 @@ authors = [
 ]
 license = "GPL-3.0-only"
 readme = "README.md"
-#packages = [
-#    {include = "microscopemetrics_omero", from = "src"}
-#]
 keywords = ["microscopy", "metrology"]
 
 [tool.pytest.ini_options]
