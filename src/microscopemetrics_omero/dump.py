@@ -25,11 +25,11 @@ def dump_image_process(
     for property_name, output_property in analysis.output.properties.items():
         # TODO: add a try/except to catch errors and log them
         module_logger.info(
-            f"Dumping {output_property.type} {property_name} from analysis {analysis.name}"
+            f"Dumping {output_property.type} {property_name} from analysis {analysis.get_name()}"
         )
         property_types_to_dump[output_property.type](conn, output_property, image, namespace)
         module_logger.info(
-            f"Dumping {output_property.type} {output_property.name} from analysis {analysis.name} completed"
+            f"Dumping {output_property.type} {output_property.name} from analysis {analysis.get_name()} completed"
         )
 
 
