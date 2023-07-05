@@ -15,6 +15,10 @@ from omero.rtypes import rint
 import importlib.util
 import pandas as pd
 
+from microscopemetrics.samples import Analysis, model
+from pydantic.color import Color
+
+
 import ezomero
 
 
@@ -81,6 +85,108 @@ def pytest_addoption(parser):
         action="store",
         default=bool(os.environ.get("OMERO_SECURE", DEFAULT_OMERO_SECURE)),
     )
+
+
+class TestAnalysis(Analysis):
+    """A class implementing all analysis options for testing."""
+
+    def __init__(self):
+        super().__init__(output_description="This analysis is for testing...")
+
+        self.add_data_requirement(
+            name="image_test_requirement",
+            description="A image for testing",
+            data_type=np.ndarray,
+        )
+        self.add_metadata_requirement(
+            name="metadata_float_test_requirement",
+            description="A required float value",
+            data_type=float,
+            units="MICRON",
+            optional=False,
+        )
+        self.add_metadata_requirement(
+            name="metadata_float_test_requirement_optional",
+            description="An optional float value",
+            data_type=float,
+            units="MICRON",
+            optional=True,
+        )
+        self.add_metadata_requirement(
+            name="metadata_int_test_requirement",
+            description="A required int value",
+            data_type=int,
+            optional=False,
+        )
+        self.add_metadata_requirement(
+            name="metadata_str_test_requirement",
+            description="A required str value",
+            data_type=str,
+            optional=False,
+        )
+
+    def _run(self):
+        test_image = np.zeros((200, 201, 20, 3, 1), dtype=np.uint8)
+        test_image[100:0, 100:0, 0:10, 0, :] = 255
+        test_image[100:0, 100:0, 11:20, 1, :] = 255
+        test_image[101:200, 101:201, :, 2, :] = 255
+
+        self.output.append(model.Image(data=test_image, name="test_output_image", description="An output image for testing"))
+
+        shapes = [
+            model.Point(x=10, y=10, stroke_color=Color("red")),
+            model.Line(x1=5, y1=5, x2=15, y2=20, stroke_color=Color("green")),
+            model.Rectangle(x=5, y=5, w=30, h=35, stroke_color=Color("blue")),
+            model.Ellipse(x=5, y=5, x_rad=30, y_rad=35, stroke_color=Color("yellow")),
+            model.Polygon(points=[(5, 5), (15, 5), (15, 15), (5, 15)], stroke_color=Color("orange")),
+        ]
+        self.output.append(
+            model.Roi(
+                name="test_output_roi",
+                description="An output ROI for testing",
+                shapes=shapes,
+            )
+        )
+
+        self.output.append(
+            model.Tag(
+                name="test_output_tag",
+                description="An output tag for testing",
+                tag_value="test",
+            )
+        )
+
+        self.output.append(
+            model.KeyValues(
+                name="test_output_key_values",
+                description="An output key-value store for testing",
+                key_values={"a": 1, "b": 2, "c": 3},
+            )
+        )
+
+        self.output.append(
+            model.Table(
+                name="test_output_table",
+                description="An output table for testing",
+                table=pd.DataFrame(
+                    {
+                        "a": [1, 2, 3],
+                        "b": [4, 5, 6],
+                        "c": [7, 8, 9],
+                    }
+                )
+            )
+        )
+
+        self.output.append(
+            model.Comment(
+                name="test_output_comment",
+                description="An output comment for testing",
+                comment="test",
+            )
+        )
+
+        return True
 
 
 # we can change this later
@@ -355,3 +461,17 @@ def image_fixture():
 @pytest.fixture(scope="session")
 def timestamp():
     return f"{datetime.now():%Y%m%d%H%M%S}"
+
+
+@pytest.fixture(scope="session")
+def microscopemetrics_finished_analysis(image_fixture):
+    mm_analysis = TestAnalysis()
+    mm_analysis.set_data("image_test_requirement", image_fixture)
+    mm_analysis.set_metadata("metadata_float_test_requirement", 1.0)
+    mm_analysis.set_metadata("metadata_float_test_requirement_optional", 2.0)
+    mm_analysis.set_metadata("metadata_int_test_requirement", 1)
+    mm_analysis.set_metadata("metadata_str_test_requirement", "test")
+
+    mm_analysis.run()
+
+    return mm_analysis
