@@ -21,10 +21,10 @@ def dump_image_process(
         "Table": _dump_output_table,
         "Comment": _dump_comment,
     }
-    for output_property in analysis.output.get_properties():
+    for property_name, output_property in analysis.output.properties.items():
         # TODO: add a try/except to catch errors and log them
         module_logger.info(
-            f"Dumping {output_property.type} {output_property.name} from analysis {analysis.name}"
+            f"Dumping {output_property.type} {property_name} from analysis {analysis.name}"
         )
         property_types_to_dump[output_property.type](conn, output_property, image)
         module_logger.info(
