@@ -5,7 +5,7 @@ def test_dump_image_process(conn, microscopemetrics_finished_analysis, project_s
     image_info = project_structure[2]
     im_id = image_info[0][1]
     image = conn.getObject("Image", im_id)
-    dump.dump_image_process(conn, image, microscopemetrics_finished_analysis)
+    dump.dump_image_process(conn, image, microscopemetrics_finished_analysis, "test_namespace")
 
 #
 # def test_dump_output_image(conn, microscopemetrics_finished_analysis, project_structure):
