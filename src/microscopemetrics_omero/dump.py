@@ -33,7 +33,7 @@ def dump_image_process(
 
 
 def _dump_output_image(conn, output_image, image):
-    new_image = omero_tools.create_image(
+    omero_tools.create_image(
         conn=conn,
         image=output_image.data,
         source_image=image,
@@ -41,7 +41,7 @@ def _dump_output_image(conn, output_image, image):
         description=f"{output_image.description}.\n" f"Source image_id:{image.getId()}",
     )
 
-    # TODO: add metadata to image
+    # TODO: We should consider that we might want to add metadata to an output image
 
 
 def _dump_output_roi(conn, output_roi, image):
