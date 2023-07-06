@@ -126,10 +126,10 @@ class TestAnalysis(Analysis):
         )
 
     def _run(self):
-        test_image = np.zeros((200, 201, 20, 3, 1), dtype=np.uint8)
-        test_image[100:0, 100:0, 0:10, 0, :] = 255
-        test_image[100:0, 100:0, 11:20, 1, :] = 255
-        test_image[101:200, 101:201, :, 2, :] = 255
+        test_image = np.zeros((20, 3, 1, 200, 201), dtype=np.uint8)
+        test_image[0:10, 0, :, 100:0, 100:0] = 255
+        test_image[11:20, 1, :, 100:0, 100:0] = 255
+        test_image[:, 2, :, 101:200, 101:201] = 255
 
         self.output.append(model.Image(data=test_image, name="test_output_image", description="An output image for testing"))
 
