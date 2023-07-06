@@ -17,6 +17,17 @@ testpaths = [
 filterwarnings = [
     'ignore::DeprecationWarning:omero.*:',
     'ignore::DeprecationWarning:omero_ext.*:',
+    'ignore::DeprecationWarning:Ice.*:',
+    'ignore::DeprecationWarning:Ice_Current_ice.*:',
+    'ignore::DeprecationWarning:Ice_Properties_ice.*:',
+    'ignore::DeprecationWarning:omero_Scripts_ice.*:',
+    'ignore::DeprecationWarning:cli.*:',
+    'ignore::DeprecationWarning:omero_ServerErrors_ice.*:',
+    'ignore::DeprecationWarning:omero_cmd_Mail_ice.*:',
+    'ignore::DeprecationWarning:omero_API_ice.*:',
+    'ignore::DeprecationWarning:omero_Tables_ice.*:',
+    'ignore::DeprecationWarning:omero_api_*.*:',
+    'ignore::DeprecationWarning:omero/plugins/import.*:',
     # 'ignore:.*invalid escape sequence:DeprecationWarning',
     # 'ignore:.*the imp module is deprecated in favour of importlib:DeprecationWarning',
 ]
