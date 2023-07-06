@@ -15,8 +15,10 @@ testpaths = [
     "tests"
 ]
 filterwarnings = [
-    'ignore:.*invalid escape sequence:DeprecationWarning',
-    'ignore:.*the imp module is deprecated in favour of importlib:DeprecationWarning',
+    'ignore::DeprecationWarning:omero.*:',
+    'ignore::DeprecationWarning:omero_ext.*:',
+    # 'ignore:.*invalid escape sequence:DeprecationWarning',
+    # 'ignore:.*the imp module is deprecated in favour of importlib:DeprecationWarning',
 ]
 
 [tool.poetry.dependencies]
