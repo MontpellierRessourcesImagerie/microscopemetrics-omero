@@ -79,6 +79,16 @@ COLUMN_TYPES = {
     "file": grid.FileColumn,
 }
 
+
+def label_channels(image, labels):
+    if len(labels) != image.getSizeC():
+        raise ValueError('The length of the channel labels is not of the same size as the size of the c dimension')
+    for label, channel in zip(labels, image.getChannels(noRE=True)):
+        logical_channel = channel.getLogicalChannel()
+        logical_channel.setName(label)
+        logical_channel.save()
+
+
 def get_image_shape(image):
     try:
         image_shape = (image.getSizeZ(),
