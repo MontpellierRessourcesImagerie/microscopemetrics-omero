@@ -32,10 +32,7 @@ from omero.model import (
     RectangleI,
     RoiI,
     enums,
-    ProjectAnnotationLinkI,
     DatasetImageLinkI,
-    TagAnnotationI,
-    TagAnnotationLinkI,
     ProjectDatasetLinkI,
 )
 from omero.rtypes import rdouble, rint, rlong, rstring
