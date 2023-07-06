@@ -416,7 +416,7 @@ def project_structure(conn, timestamp, image_fixture, users_groups, omero_params
 
                     for imname in dataset["images"]:
                         im_id = ezomero.post_image(
-                            current_conn, image_fixture, imname, dataset_id=ds_id
+                            current_conn, image_fixture, imname, dataset_id=ds_id, dim_order="zctyx"
                         )
                         image_info.append([imname, im_id])
             for dataset in group["datasets"]:
