@@ -192,39 +192,203 @@ def get_tagged_images_in_dataset(dataset, tag_id):
     return images
 
 
-def create_image(
-    conn,
-    image,
-    source_image,
-    image_name,
-    description,
-):
-    zct_list = list(
-        product(
-            range(image.shape[0]),
-            range(image.shape[1]),
-            range(image.shape[2]),
-        )
-    )
-    zct_generator = (image[z, c, t, :, :] for z, c, t in zct_list)
+def create_image_copy(conn,
+                      source_image_id,
+                      channel_list=None,
+                      image_name=None,
+                      image_description=None,
+                      size_x=None, size_y=None, size_z=None, size_t=None):
+    """Creates a copy of an existing OMERO image using all the metadata but not the pixels values.
+    The parameter values will override the ones of the original image"""
+    pixels_service = conn.getPixelsService()
 
-    new_image = conn.createImageFromNumpySeq(
-        zctPlanes=zct_generator,
-        imageName=image_name,
-        sizeZ=image.shape[0],
-        sizeC=image.shape[1],
-        sizeT=image.shape[2],
-        description=description,
-        dataset=source_image.getParent(),
-        sourceImageId=source_image.getId(),
-    )
+    if channel_list is None:
+        source_image = conn.getObject('Image', source_image_id)
+        channel_list = list(range(source_image.getSizeC()))
 
-    # TODO: see with ome why description is not applied
-    img_wrapper = conn.getObject("Image", new_image.getId())
-    img_wrapper.setDescription(description)
-    img_wrapper.save()
+    image_id = pixels_service.copyAndResizeImage(imageId=source_image_id,
+                                                 sizeX=rtypes.rint(size_x),
+                                                 sizeY=rtypes.rint(size_y),
+                                                 sizeZ=rtypes.rint(size_z),
+                                                 sizeT=rtypes.rint(size_t),
+                                                 channelList=channel_list,
+                                                 methodology=image_name,
+                                                 copyStats=False)
+
+    new_image = conn.getObject("Image", image_id)
+
+    if image_description is not None:  # Description is not provided as an override option in the OMERO interface
+        new_image.setDescription(image_description)
+        new_image.save()
 
     return new_image
+
+
+def create_image(conn, image_name, size_x, size_y, size_z, size_t, size_c, data_type, channel_labels=None, image_description=None):
+    """Creates an OMERO empty image from scratch"""
+    pixels_service = conn.getPixelsService()
+    query_service = conn.getQueryService()
+
+    if data_type not in DTYPES_NP_TO_OMERO:  # try to look up any not named above
+        pixel_type = data_type
+    else:
+        pixel_type = DTYPES_NP_TO_OMERO[data_type]
+
+    pixels_type = query_service.findByQuery(
+        f"from PixelsType as p where p.value='{pixel_type}'", None
+    )
+    if pixels_type is None:
+        raise ValueError(
+            "Cannot create an image in omero from numpy array "
+            "with dtype: %s" % data_type)
+
+    image_id = pixels_service.createImage(sizeX=size_x,
+                                          sizeY=size_y,
+                                          sizeZ=size_z,
+                                          sizeT=size_t,
+                                          channelList=list(range(size_c)),
+                                          pixelsType=pixels_type,
+                                          name=image_name,
+                                          description=image_description)
+
+    new_image = conn.getObject("Image", image_id.getValue())
+
+    if channel_labels is not None:
+        label_channels(new_image, channel_labels)
+
+    return new_image
+
+
+def _create_image_whole(conn, data, image_name, image_description=None, dataset=None, channel_list=None, source_image_id=None):
+
+    zct_generator = (data[z, c, t, :, :] for z, c, t in product(range(data.shape[0]),
+                                                                range(data.shape[1]),
+                                                                range(data.shape[2])))
+
+    return conn.createImageFromNumpySeq(zctPlanes=zct_generator,
+                                        imageName=image_name,
+                                        sizeZ=data.shape[0],
+                                        sizeC=data.shape[1],
+                                        sizeT=data.shape[2],
+                                        description=image_description,
+                                        dataset=dataset,
+                                        channelList=channel_list,
+                                        sourceImageId=source_image_id)
+
+
+def create_image_from_numpy_array(conn,
+                                  data,
+                                  image_name,
+                                  image_description=None,
+                                  channel_labels=None,
+                                  dataset=None,
+                                  source_image_id=None,
+                                  channels_list=None,
+                                  force_whole_planes=False):
+    """
+    Creates a new image in OMERO from a n dimensional numpy array.
+    :param channel_labels:
+    :param force_whole_planes:
+    :param channels_list:
+    :param conn: The conn object to OMERO
+    :param data: the ndarray. Must be a 5D array with dimensions in the order zctyx
+    :param image_name:
+    :param image_description:
+    :param dataset:
+    :param source_image_id:
+    :return:
+    """
+
+    zct_list = list(product(range(data.shape[0]), range(data.shape[1]), range(data.shape[2])))
+    zct_generator = (data[z, c, t, :, :] for z, c, t in zct_list)
+
+    # Verify if the image must be tiled
+    max_plane_size = conn.getMaxPlaneSize()
+    if force_whole_planes or (data.shape[-1] < max_plane_size[-1] and data.shape[-2] < max_plane_size[-2]):
+        # Image is small enough to fill it with full planes
+        new_image = conn.createImageFromNumpySeq(zctPlanes=zct_generator,
+                                                 imageName=image_name,
+                                                 sizeZ=data.shape[0],
+                                                 sizeC=data.shape[1],
+                                                 sizeT=data.shape[2],
+                                                 description=image_description,
+                                                 dataset=dataset,
+                                                 sourceImageId=source_image_id,
+                                                 channelList=channels_list)
+
+    else:
+        zct_tile_list = _get_tile_list(zct_list, data.shape, max_plane_size)
+
+        if source_image_id is not None:
+            new_image = create_image_copy(conn, source_image_id,
+                                          image_name=image_name,
+                                          image_description=image_description,
+                                          size_x=data.shape[-1],
+                                          size_y=data.shape[-2],
+                                          size_z=data.shape[0],
+                                          size_t=data.shape[2],
+                                          channel_list=channels_list)
+
+        else:
+            new_image = create_image(conn,
+                                     image_name=image_name,
+                                     size_x=data.shape[-1],
+                                     size_y=data.shape[-2],
+                                     size_z=data.shape[0],
+                                     size_t=data.shape[2],
+                                     size_c=data.shape[1],
+                                     data_type=data.dtype.name,
+                                     image_description=image_description)
+
+        raw_pixel_store = conn.c.sf.createRawPixelsStore()
+        pixels_id = new_image.getPrimaryPixels().getId()
+        raw_pixel_store.setPixelsId(pixels_id, True)
+
+        for tile_coord in zct_tile_list:
+            tile_data = data[tile_coord[0],
+                             tile_coord[1],
+                             tile_coord[2],
+                             tile_coord[3][1]:tile_coord[3][1] + tile_coord[3][3],
+                             tile_coord[3][0]:tile_coord[3][0] + tile_coord[3][2]]
+            tile_data = tile_data.byteswap()
+            bin_tile_data = tile_data.tostring()
+
+            raw_pixel_store.setTile(bin_tile_data,
+                                    tile_coord[0],
+                                    tile_coord[1],
+                                    tile_coord[2],
+                                    tile_coord[3][0],
+                                    tile_coord[3][1],
+                                    tile_coord[3][2],
+                                    tile_coord[3][3],
+                                    conn.SERVICE_OPTS
+                                    )
+
+        if dataset is not None:
+            link_image_to_dataset(conn, new_image, dataset)
+
+    if channel_labels is not None:
+        label_channels(new_image, channel_labels)
+
+    return new_image
+
+
+def _get_tile_list(zct_list, data_shape, tile_size):
+    zct_tile_list = []
+    for p in zct_list:
+        for tile_offset_y in range(0, data_shape[-2], tile_size[1]):
+            for tile_offset_x in range(0, data_shape[-1], tile_size[0]):
+                tile_width = tile_size[0]
+                tile_height = tile_size[1]
+                if tile_width + tile_offset_x > data_shape[-1]:
+                    tile_width = data_shape[-1] - tile_offset_x
+                if tile_height + tile_offset_y > data_shape[-2]:
+                    tile_height = data_shape[-2] - tile_offset_y
+
+                tile_xywh = (tile_offset_x, tile_offset_y, tile_width, tile_height)
+                zct_tile_list.append((*p, tile_xywh))
+
+    return zct_tile_list
 
 
 def create_roi(conn, image, shapes, name, description):
@@ -453,19 +617,17 @@ def create_tag(conn, tag_string, omero_object, description=None):
 def _serialize_map_value(value):
     if isinstance(value, str):
         return value
-    else:
-        try:
-            return json.dumps(value)
-        except ValueError as e:
-            # TODO: log an error
-            return json.dumps(value.__str__())
+    try:
+        return json.dumps(value)
+    except ValueError as e:
+        # TODO: log an error
+        return json.dumps(value.__str__())
 
 
 def _dict_to_map(dictionary):
     """Converts a dictionary into a list of key:value pairs to be fed as map annotation.
     If value is not a string we serialize it as a json string"""
-    map_annotation = [[str(k), _serialize_map_value(v)] for k, v in dictionary.items()]
-    return map_annotation
+    return [[str(k), _serialize_map_value(v)] for k, v in dictionary.items()]
 
 
 def create_key_value(
@@ -514,7 +676,7 @@ def _create_columns(table):
     values = [table[c].values.tolist() for c in table.columns]
 
     columns = []
-    for i, (cn, v) in enumerate(zip(column_names, values)):
+    for cn, v in zip(column_names, values):
         v_type = type(v[0])
         if v_type == str:
             size = (
@@ -618,3 +780,17 @@ def create_comment(conn, comment_value, omero_object, namespace=None):
 
 def _link_annotation(object_wrapper, annotation_wrapper):
     object_wrapper.linkAnnotation(annotation_wrapper)
+
+
+def link_dataset_to_project(conn, dataset, project):
+    link = model.ProjectDatasetLinkI()
+    link.setParent(model.ProjectI(project.getId(), False))  # linking to a loaded project might raise exception
+    link.setChild(model.DatasetI(dataset.getId(), False))
+    conn.getUpdateService().saveObject(link)
+
+
+def link_image_to_dataset(conn, image, dataset):
+    link = model.DatasetImageLinkI()
+    link.setParent(model.DatasetI(dataset.getId(), False))
+    link.setChild(model.ImageI(image.getId(), False))
+    conn.getUpdateService().saveObject(link)

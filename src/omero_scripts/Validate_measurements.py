@@ -106,7 +106,7 @@ def validate_dataset(dataset):
     # for image in dataset.listChildren():
     #     for ann in image.listAnnotations():
     #         if type(ann) == gateway.TagAnnotationWrapper and ann.getId() == METRICS_GENERATED_TAG_ID:
-    #             connection.deleteObjects('Image', [image.getId()], deleteAnns=False, deleteChildren=True, wait=True)
+    #             conn.deleteObjects('Image', [image.getId()], deleteAnns=False, deleteChildren=True, wait=True)
 
     # File and map annotations on rest of images
     for image in dataset.listChildren():
@@ -127,12 +127,12 @@ def validate_dataset(dataset):
 
     # TODO: Rois are not having a namespace. Is there another possibility to secure them?
     # # Delete all rois
-    # roi_service = connection.getRoiService()
+    # roi_service = conn.getRoiService()
     # for image in dataset.listChildren():
     #     rois = roi_service.findByImage(image.getId(), None)
     #     rois_ids = [r.getId().getValue() for r in rois.rois]
     #     if len(rois_ids) > 1:
-    #         connection.deleteObjects('Roi', rois_ids, wait=True)
+    #         conn.deleteObjects('Roi', rois_ids, wait=True)
 
     logger.info(f"Nr of validated annotations: {changes_count}")
 
