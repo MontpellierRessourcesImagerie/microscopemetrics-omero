@@ -450,7 +450,7 @@ def conn(omero_params):
 
 
 @pytest.fixture(scope="session")
-def image_fixture():  # format zctyx TODO: change this
+def image_fixture():  # format zctxy TODO: change to this format across teh board
     test_image = np.zeros((20, 3, 1, 200, 201), dtype=np.uint8)
     test_image[0:10, 0, :, 0:100, 0:100] = 255
     test_image[11:20, 1, :, 0:100, 0:100] = 255
