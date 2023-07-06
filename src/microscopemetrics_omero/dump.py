@@ -34,13 +34,17 @@ def dump_image_process(
 
 
 def _dump_output_image(conn, output_image, image, namespace):
-    omero_tools.create_image(
-        conn=conn,
-        image=output_image.data,
-        source_image=image,
-        image_name=output_image.name,
-        description=f"{output_image.description}.\n" f"Source image_id:{image.getId()}",
-    )
+    # TODO: add channel labels to the output image
+    omero_tools.create_image_from_numpy_array(conn=conn,
+                                              data=output_image.data,
+                                              image_name=output_image.name,
+                                              image_description=f"{output_image.description}.\n" f"Source image:{image.getId()}",
+                                              channel_labels=None,
+                                              dataset=image.getParent(),
+                                              source_image_id=image.getId(),
+                                              channels_list=None,
+                                              force_whole_planes=False
+                                              )
 
     # TODO: We should consider that we might want to add metadata to an output image
 
