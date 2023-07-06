@@ -1,17 +1,26 @@
 import logging
 
 from microscopemetrics_omero import omero_tools
-from microscopemetrics import samples
+from microscopemetrics import samples as mm_samples
+from microscopemetrics.model import model as mm_model
 from omero.gateway import BlitzGateway, ImageWrapper
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetrics_omero.dump")
 
+SHAPE_TO_FUNCTION = {
+    mm_model.Point: omero_tools.create_shape_point,
+    mm_model.Line: omero_tools.create_shape_line,
+    mm_model.Rectangle: omero_tools.create_shape_rectangle,
+    mm_model.Ellipse: omero_tools.create_shape_ellipse,
+    mm_model.Polygon: omero_tools.create_shape_polygon,
+    mm_model.Mask: omero_tools.create_shape_mask,
+}
 
 def dump_image_process(
     conn: BlitzGateway,
     image: ImageWrapper,
-    analysis: samples.Analysis,
+    analysis: mm_samples.Analysis,
     namespace: str
 ) -> None:
     property_types_to_dump = {
@@ -50,10 +59,11 @@ def _dump_output_image(conn, output_image, image, namespace):
 
 
 def _dump_output_roi(conn, output_roi, image, namespace):
+    shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in output_roi.shapes]
     omero_tools.create_roi(
         conn=conn,
         image=image,
-        shapes=output_roi.shapes,
+        shapes=shapes,
         name=output_roi.name,
         description=output_roi.description,
     )

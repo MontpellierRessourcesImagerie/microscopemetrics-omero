@@ -37,6 +37,9 @@ from omero.model import (
 )
 from omero.rtypes import rdouble, rint, rlong, rstring
 from pandas import DataFrame
+from pydantic.color import Color
+
+from microscopemetrics.model import model as mm_model
 
 DTYPES_NP_TO_OMERO = {
     "int8": enums.PixelsTypeint8,
@@ -204,12 +207,12 @@ def get_tagged_images_in_dataset(dataset, tag_id):
     return images
 
 
-def create_image_copy(conn,
-                      source_image_id,
-                      channel_list=None,
-                      image_name=None,
-                      image_description=None,
-                      size_x=None, size_y=None, size_z=None, size_t=None):
+def _create_image_copy(conn,
+                       source_image_id,
+                       channel_list=None,
+                       image_name=None,
+                       image_description=None,
+                       size_x=None, size_y=None, size_z=None, size_t=None):
     """Creates a copy of an existing OMERO image using all the metadata but not the pixels values.
     The parameter values will override the ones of the original image"""
     pixels_service = conn.getPixelsService()
@@ -236,7 +239,7 @@ def create_image_copy(conn,
     return new_image
 
 
-def create_image(conn, image_name, size_x, size_y, size_z, size_t, size_c, data_type, channel_labels=None, image_description=None):
+def _create_image(conn, image_name, size_x, size_y, size_z, size_t, size_c, data_type, channel_labels=None, image_description=None):
     """Creates an OMERO empty image from scratch"""
     pixels_service = conn.getPixelsService()
     query_service = conn.getQueryService()
@@ -332,25 +335,25 @@ def create_image_from_numpy_array(conn: BlitzGateway,
         zct_tile_list = _get_tile_list(zct_list, data.shape, max_plane_size)
 
         if source_image_id is not None:
-            new_image = create_image_copy(conn, source_image_id,
-                                          image_name=image_name,
-                                          image_description=image_description,
-                                          size_x=data.shape[-1],
-                                          size_y=data.shape[-2],
-                                          size_z=data.shape[0],
-                                          size_t=data.shape[2],
-                                          channel_list=channels_list)
+            new_image = _create_image_copy(conn, source_image_id,
+                                           image_name=image_name,
+                                           image_description=image_description,
+                                           size_x=data.shape[-1],
+                                           size_y=data.shape[-2],
+                                           size_z=data.shape[0],
+                                           size_t=data.shape[2],
+                                           channel_list=channels_list)
 
         else:
-            new_image = create_image(conn,
-                                     image_name=image_name,
-                                     size_x=data.shape[-1],
-                                     size_y=data.shape[-2],
-                                     size_z=data.shape[0],
-                                     size_t=data.shape[2],
-                                     size_c=data.shape[1],
-                                     data_type=data.dtype.name,
-                                     image_description=image_description)
+            new_image = _create_image(conn,
+                                      image_name=image_name,
+                                      size_x=data.shape[-1],
+                                      size_y=data.shape[-2],
+                                      size_z=data.shape[0],
+                                      size_t=data.shape[2],
+                                      size_c=data.shape[1],
+                                      data_type=data.dtype.name,
+                                      image_description=image_description)
 
         raw_pixel_store = conn.c.sf.createRawPixelsStore()
         pixels_id = new_image.getPrimaryPixels().getId()
@@ -405,14 +408,13 @@ def _get_tile_list(zct_list, data_shape, tile_size):
 
 def create_roi(conn, image, shapes, name, description):
     type_to_func = {
-        "point": _create_shape_point,
-        "line": _create_shape_line,
-        "rectangle": _create_shape_rectangle,
-        "ellipse": _create_shape_ellipse,
-        "polygon": _create_shape_polygon,
-        "mask": _create_shape_mask,
+        "point": create_shape_point,
+        "line": create_shape_line,
+        "rectangle": create_shape_rectangle,
+        "ellipse": create_shape_ellipse,
+        "polygon": create_shape_polygon,
+        "mask": create_shape_mask,
     }
-    shapes = [type_to_func[shape["type"]](**shape["args"]) for shape in shapes]
 
     # create an ROI, link it to Image
     roi = RoiI()  # TODO: work with wrappers
@@ -428,12 +430,13 @@ def create_roi(conn, image, shapes, name, description):
     return conn.getUpdateService().saveAndReturnObject(roi)
 
 
-def _rgba_to_int(red, green, blue, alpha=255):
+def _rgba_to_int(rgba_color: Color):
     """Return the color as an Integer in RGBA encoding"""
-    r = red << 24
-    g = green << 16
-    b = blue << 8
-    a = alpha
+    rgba_color = rgba_color.as_rgb_tuple(alpha=True)
+    r = rgba_color[0] << 24
+    g = rgba_color[1] << 16
+    b = rgba_color[2] << 8
+    a = rgba_color[3]
     rgba_int = sum([r, g, b, a])
     if rgba_int > (2**31 - 1):  # convert to signed 32-bit int
         rgba_int = rgba_int - 2**32
@@ -444,175 +447,125 @@ def _rgba_to_int(red, green, blue, alpha=255):
 def _set_shape_properties(
     shape,
     name=None,
-    fill_color=(10, 10, 10, 10),
-    stroke_color=(255, 255, 255, 255),
-    stroke_width=1,
+    fill_color: Color=Color("grey"),
+    stroke_color: Color=Color("white"),
+    stroke_width: int=1,
 ):
-    if name:
+    if name is not None:
         shape.setTextValue(rstring(name))
-    shape.setFillColor(rint(_rgba_to_int(*fill_color)))
-    shape.setStrokeColor(rint(_rgba_to_int(*stroke_color)))
+    shape.setFillColor(rint(_rgba_to_int(fill_color)))
+    shape.setStrokeColor(rint(_rgba_to_int(stroke_color)))
     shape.setStrokeWidth(LengthI(stroke_width, enums.UnitsLength.PIXEL))
 
 
-def _create_shape_point(
-    x_pos,
-    y_pos,
-    z_pos=None,
-    c_pos=None,
-    t_pos=None,
-    name=None,
-    stroke_color=(255, 255, 255, 255),
-    fill_color=(10, 10, 10, 20),
-    stroke_width=1,
-):
+def create_shape_point(shape: mm_model.Point):
     point = PointI()
-    point.x = rdouble(x_pos)
-    point.y = rdouble(y_pos)
-    if z_pos is not None:
-        point.theZ = rint(z_pos)
-    if c_pos is not None:
-        point.theC = rint(c_pos)
-    if t_pos is not None:
-        point.theT = rint(t_pos)
+    point.x = rdouble(shape.x)
+    point.y = rdouble(shape.y)
+    if shape.z is not None:
+        point.theZ = rint(shape.z)
+    if shape.c is not None:
+        point.theC = rint(shape.c)
+    if shape.t is not None:
+        point.theT = rint(shape.t)
     _set_shape_properties(
         shape=point,
-        name=name,
-        stroke_color=stroke_color,
-        stroke_width=stroke_width,
-        fill_color=fill_color,
+        name=shape.label,
+        stroke_color=shape.stroke_color,
+        stroke_width=shape.stroke_width,
+        fill_color=shape.fill_color,
     )
-
     return point
 
 
-def _create_shape_line(
-    x1_pos,
-    y1_pos,
-    x2_pos,
-    y2_pos,
-    c_pos=None,
-    z_pos=None,
-    t_pos=None,
-    name=None,
-    stroke_color=(255, 255, 255, 255),
-    stroke_width=1,
-):
+def create_shape_line(shape: mm_model.Line):
     line = LineI()
-    line.x1 = rdouble(x1_pos)
-    line.x2 = rdouble(x2_pos)
-    line.y1 = rdouble(y1_pos)
-    line.y2 = rdouble(y2_pos)
-    line.theZ = rint(z_pos)
-    line.theT = rint(t_pos)
-    if c_pos is not None:
-        line.theC = rint(c_pos)
+    line.x1 = rdouble(shape.x1)
+    line.x2 = rdouble(shape.x2)
+    line.y1 = rdouble(shape.y1)
+    line.y2 = rdouble(shape.y2)
+    line.theZ = rint(shape.z)
+    line.theT = rint(shape.t)
+    if shape.c is not None:
+        line.theC = rint(shape.c)
     _set_shape_properties(
-        line, name=name, stroke_color=stroke_color, stroke_width=stroke_width
+        shape=line,
+        name=shape.label,
+        stroke_color=shape.stroke_color,
+        stroke_width=shape.stroke_width
     )
     return line
 
 
-def _create_shape_rectangle(
-    x_pos,
-    y_pos,
-    width,
-    height,
-    z_pos,
-    t_pos,
-    rectangle_name=None,
-    fill_color=(10, 10, 10, 255),
-    stroke_color=(255, 255, 255, 255),
-    stroke_width=1,
-):
+def create_shape_rectangle(shape: mm_model.Rectangle):
     rect = RectangleI()
-    rect.x = rdouble(x_pos)
-    rect.y = rdouble(y_pos)
-    rect.width = rdouble(width)
-    rect.height = rdouble(height)
-    rect.theZ = rint(z_pos)
-    rect.theT = rint(t_pos)
+    rect.x = rdouble(shape.x)
+    rect.y = rdouble(shape.y)
+    rect.width = rdouble(shape.w)
+    rect.height = rdouble(shape.h)
+    rect.theZ = rint(shape.z)
+    rect.theT = rint(shape.t)
     _set_shape_properties(
         shape=rect,
-        name=rectangle_name,
-        fill_color=fill_color,
-        stroke_color=stroke_color,
-        stroke_width=stroke_width,
+        name=shape.label,
+        fill_color=shape.fill_color,
+        stroke_color=shape.stroke_color,
+        stroke_width=shape.stroke_width,
     )
     return rect
 
 
-def _create_shape_ellipse(
-    x_pos,
-    y_pos,
-    x_radius,
-    y_radius,
-    z_pos,
-    t_pos,
-    ellipse_name=None,
-    fill_color=(10, 10, 10, 255),
-    stroke_color=(255, 255, 255, 255),
-    stroke_width=1,
-):
+def create_shape_ellipse(shape: mm_model.Ellipse):
     ellipse = EllipseI()
-    ellipse.setX(rdouble(x_pos))
-    ellipse.setY(rdouble(y_pos))  # TODO: setters and getters everywhere
-    ellipse.radiusX = rdouble(x_radius)
-    ellipse.radiusY = rdouble(y_radius)
-    ellipse.theZ = rint(z_pos)
-    ellipse.theT = rint(t_pos)
+    ellipse.setX(rdouble(shape.x))
+    ellipse.setY(rdouble(shape.y))  # TODO: setters and getters everywhere
+    ellipse.radiusX = rdouble(shape.x_rad)
+    ellipse.radiusY = rdouble(shape.y_rad)
+    ellipse.theZ = rint(shape.z)
+    ellipse.theT = rint(shape.t)
     _set_shape_properties(
         ellipse,
-        name=ellipse_name,
-        fill_color=fill_color,
-        stroke_color=stroke_color,
-        stroke_width=stroke_width,
+        name=shape.label,
+        fill_color=shape.fill_color,
+        stroke_color=shape.stroke_color,
+        stroke_width=shape.stroke_width,
     )
     return ellipse
 
 
-def _create_shape_polygon(
-    points_list,
-    z_pos,
-    t_pos,
-    polygon_name=None,
-    fill_color=(10, 10, 10, 255),
-    stroke_color=(255, 255, 255, 255),
-    stroke_width=1,
-):
+def create_shape_polygon(shape: mm_model.Polygon):
     polygon = PolygonI()
     points_str = "".join(
-        ["".join([str(x), ",", str(y), ", "]) for x, y in points_list]
+        ["".join([str(x), ",", str(y), ", "]) for x, y in shape.points]
     )[:-2]
     polygon.points = rstring(points_str)
-    polygon.theZ = rint(z_pos)
-    polygon.theT = rint(t_pos)
+    polygon.theZ = rint(shape.z)
+    polygon.theT = rint(shape.t)
     _set_shape_properties(
         polygon,
-        name=polygon_name,
-        fill_color=fill_color,
-        stroke_color=stroke_color,
-        stroke_width=stroke_width,
+        name=shape.label,
+        fill_color=shape.fill_color,
+        stroke_color=shape.stroke_color,
+        stroke_width=shape.stroke_width,
     )
     return polygon
 
 
-def _create_shape_mask(
-    mask_array, x_pos, y_pos, z_pos, t_pos, mask_name=None, fill_color=(10, 10, 10, 255)
-):
+def create_shape_mask(shape: mm_model.Mask):
     mask = MaskI()
-    mask.setX(rdouble(x_pos))
-    mask.setY(rdouble(y_pos))
-    mask.setTheZ(rint(z_pos))
-    mask.setTheT(rint(t_pos))
-    mask.setWidth(rdouble(mask_array.shape[0]))
-    mask.setHeight(rdouble(mask_array.shape[1]))
-    mask.setFillColor(rint(_rgba_to_int(*fill_color)))
-    if mask_name:
-        mask.setTextValue(rstring(mask_name))
-    mask_packed = np.packbits(mask_array)  # TODO: raise error when not boolean array
+    mask.setX(rdouble(shape.x))
+    mask.setY(rdouble(shape.y))
+    mask.setTheZ(rint(shape.z))
+    mask.setTheT(rint(shape.t))
+    mask.setWidth(rdouble(shape.mask.shape[0]))
+    mask.setHeight(rdouble(shape.mask.shape[1]))
+    mask_packed = np.packbits(shape.mask)  # TODO: raise error when not boolean array
     mask.setBytes(mask_packed.tobytes())
-
+    _set_shape_properties(
+        mask,
+        name=shape.label,
+        fill_color=shape.fill_color,
+    )
     return mask
 
 
