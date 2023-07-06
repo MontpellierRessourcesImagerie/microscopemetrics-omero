@@ -32,6 +32,11 @@ from omero.model import (
     RectangleI,
     RoiI,
     enums,
+    ProjectAnnotationLinkI,
+    DatasetImageLinkI,
+    TagAnnotationI,
+    TagAnnotationLinkI,
+    ProjectDatasetLinkI,
 )
 from omero.rtypes import rdouble, rint, rlong, rstring
 from pandas import DataFrame
@@ -80,7 +85,7 @@ COLUMN_TYPES = {
 }
 
 
-def label_channels(image, labels):
+def _label_channels(image, labels):
     if len(labels) != image.getSizeC():
         raise ValueError('The length of the channel labels is not of the same size as the size of the c dimension')
     for label, channel in zip(labels, image.getChannels(noRE=True)):
@@ -89,7 +94,7 @@ def label_channels(image, labels):
         logical_channel.save()
 
 
-def get_image_shape(image):
+def _get_image_shape(image):
     try:
         image_shape = (image.getSizeZ(),
                        image.getSizeC(),
@@ -102,7 +107,7 @@ def get_image_shape(image):
     return image_shape
 
 
-def get_pixel_size(image, order='ZXY'):
+def _get_pixel_size(image, order='ZXY'):
     pixels = image.getPrimaryPixels()
 
     order = order.upper()
@@ -114,7 +119,7 @@ def get_pixel_size(image, order='ZXY'):
     return pixel_sizes
 
 
-def get_pixel_size_units(image):
+def _get_pixel_size_units(image):
     pixels = image.getPrimaryPixels()
 
     return (
@@ -130,7 +135,7 @@ def get_image_intensities(
     """Returns a numpy array containing the intensity values of the image
     Returns an array with dimensions arranged as zctyx
     """
-    image_shape = get_image_shape(image)
+    image_shape = _get_image_shape(image)
 
     # TODO: verify that image fits in ice message size. Otherwise get in tiles
 
@@ -217,10 +222,10 @@ def create_image_copy(conn,
         channel_list = list(range(source_image.getSizeC()))
 
     image_id = pixels_service.copyAndResizeImage(imageId=source_image_id,
-                                                 sizeX=rtypes.rint(size_x),
-                                                 sizeY=rtypes.rint(size_y),
-                                                 sizeZ=rtypes.rint(size_z),
-                                                 sizeT=rtypes.rint(size_t),
+                                                 sizeX=rint(size_x),
+                                                 sizeY=rint(size_y),
+                                                 sizeZ=rint(size_z),
+                                                 sizeT=rint(size_t),
                                                  channelList=channel_list,
                                                  methodology=image_name,
                                                  copyStats=False)
@@ -264,7 +269,7 @@ def create_image(conn, image_name, size_x, size_y, size_z, size_t, size_c, data_
     new_image = conn.getObject("Image", image_id.getValue())
 
     if channel_labels is not None:
-        label_channels(new_image, channel_labels)
+        _label_channels(new_image, channel_labels)
 
     return new_image
 
@@ -286,27 +291,27 @@ def _create_image_whole(conn, data, image_name, image_description=None, dataset=
                                         sourceImageId=source_image_id)
 
 
-def create_image_from_numpy_array(conn,
-                                  data,
-                                  image_name,
-                                  image_description=None,
-                                  channel_labels=None,
-                                  dataset=None,
-                                  source_image_id=None,
-                                  channels_list=None,
-                                  force_whole_planes=False):
+def create_image_from_numpy_array(conn: BlitzGateway,
+                                  data: np.ndarray,
+                                  image_name: str,
+                                  image_description: str=None,
+                                  channel_labels: Union[list, tuple]=None,
+                                  dataset: DatasetWrapper=None,
+                                  source_image_id: int=None,
+                                  channels_list: list[int]=None,
+                                  force_whole_planes: bool=False):
     """
     Creates a new image in OMERO from a n dimensional numpy array.
-    :param channel_labels:
+    :param channel_labels: A list of channel labels
     :param force_whole_planes:
     :param channels_list:
     :param conn: The conn object to OMERO
     :param data: the ndarray. Must be a 5D array with dimensions in the order zctyx
-    :param image_name:
-    :param image_description:
-    :param dataset:
-    :param source_image_id:
-    :return:
+    :param image_name: The name of the image
+    :param image_description: The description of the image
+    :param dataset: The dataset where the image will be created
+    :param source_image_id: The id of the image to copy metadata from
+    :return: The new image
     """
 
     zct_list = list(product(range(data.shape[0]), range(data.shape[1]), range(data.shape[2])))
@@ -375,10 +380,10 @@ def create_image_from_numpy_array(conn,
                                     )
 
         if dataset is not None:
-            link_image_to_dataset(conn, new_image, dataset)
+            _link_image_to_dataset(conn, new_image, dataset)
 
     if channel_labels is not None:
-        label_channels(new_image, channel_labels)
+        _label_channels(new_image, channel_labels)
 
     return new_image
 
@@ -792,15 +797,15 @@ def _link_annotation(object_wrapper, annotation_wrapper):
     object_wrapper.linkAnnotation(annotation_wrapper)
 
 
-def link_dataset_to_project(conn, dataset, project):
-    link = model.ProjectDatasetLinkI()
-    link.setParent(model.ProjectI(project.getId(), False))  # linking to a loaded project might raise exception
-    link.setChild(model.DatasetI(dataset.getId(), False))
+def _link_dataset_to_project(conn, dataset, project):
+    link = ProjectDatasetLinkI()
+    link.setParent(ProjectI(project.getId(), False))  # linking to a loaded project might raise exception
+    link.setChild(DatasetI(dataset.getId(), False))
     conn.getUpdateService().saveObject(link)
 
 
-def link_image_to_dataset(conn, image, dataset):
-    link = model.DatasetImageLinkI()
-    link.setParent(model.DatasetI(dataset.getId(), False))
-    link.setChild(model.ImageI(image.getId(), False))
+def _link_image_to_dataset(conn, image, dataset):
+    link = DatasetImageLinkI()
+    link.setParent(DatasetI(dataset.getId(), False))
+    link.setChild(ImageI(image.getId(), False))
     conn.getUpdateService().saveObject(link)
