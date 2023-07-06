@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["microscopy", "metrology"]
 
 [tool.pytest.ini_options]
-#addopts = "--cov"
+addopts = "--cov"
 testpaths = [
     "tests"
 ]
