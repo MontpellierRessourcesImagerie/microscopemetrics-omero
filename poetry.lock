@@ -1326,7 +1326,7 @@ scipy = "^1.5.4"
 type = "git"
 url = "https://github.com/juliomateoslangerak/microscope-metrics.git"
 reference = "testing_linkML"
-resolved_reference = "abb878209938d8354dcd311ddd5fa9f34e088d3c"
+resolved_reference = "087e63458f8c130110562eca590f1ee1a5e3bb06"
 
 [[package]]
 name = "more-itertools"

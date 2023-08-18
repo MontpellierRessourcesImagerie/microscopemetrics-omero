@@ -2,19 +2,19 @@ import logging
 
 from microscopemetrics_omero import omero_tools
 from microscopemetrics import samples as mm_samples
-from microscopemetrics.model import model as mm_model
+from microscopemetrics.data_schema import core_schema as mm_schema
 from omero.gateway import BlitzGateway, ImageWrapper
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetrics_omero.dump")
 
 SHAPE_TO_FUNCTION = {
-    mm_model.Point: omero_tools.create_shape_point,
-    mm_model.Line: omero_tools.create_shape_line,
-    mm_model.Rectangle: omero_tools.create_shape_rectangle,
-    mm_model.Ellipse: omero_tools.create_shape_ellipse,
-    mm_model.Polygon: omero_tools.create_shape_polygon,
-    mm_model.Mask: omero_tools.create_shape_mask,
+    mm_schema.Point: omero_tools.create_shape_point,
+    mm_schema.Line: omero_tools.create_shape_line,
+    mm_schema.Rectangle: omero_tools.create_shape_rectangle,
+    mm_schema.Ellipse: omero_tools.create_shape_ellipse,
+    mm_schema.Polygon: omero_tools.create_shape_polygon,
+    mm_schema.Mask: omero_tools.create_shape_mask,
 }
 
 def dump_image_process(
@@ -42,15 +42,15 @@ def dump_image_process(
         )
 
 
-def _dump_output_image(conn, output_image, image, namespace):
+def _dump_output_image(conn: BlitzGateway, output_image: mm_schema.Image, source_image, namespace):
     # TODO: add channel labels to the output image
     omero_tools.create_image_from_numpy_array(conn=conn,
                                               data=output_image.data,
                                               image_name=output_image.name,
-                                              image_description=f"{output_image.description}.\n" f"Source image:{image.getId()}",
+                                              image_description=f"{output_image.description}.\n" f"Source image:{source_image.getId()}",
                                               channel_labels=None,
-                                              dataset=image.getParent(),
-                                              source_image_id=image.getId(),
+                                              dataset=source_image.getParent(),
+                                              source_image_id=source_image.getId(),
                                               channels_list=None,
                                               force_whole_planes=False
                                               )
@@ -69,12 +69,11 @@ def _dump_output_roi(conn, output_roi, image, namespace):
     )
 
 
-def _dump_output_tag(conn, output_tag, object, namespace):
+def _dump_output_tag(conn: BlitzGateway, output_tag: mm, omero_object, namespace):
     omero_tools.create_tag(
         conn=conn,
-        tag_string=output_tag.tag_value,
-        omero_object=object,
-        description=output_tag.description,
+        tag=output_tag.tag_value,
+        omero_object=omero_object,
     )
 
 

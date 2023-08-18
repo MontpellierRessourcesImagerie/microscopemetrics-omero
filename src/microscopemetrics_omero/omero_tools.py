@@ -2,7 +2,7 @@ import json
 from itertools import product
 from random import choice
 from string import ascii_letters
-from typing import Union
+from typing import Union, Tuple, List
 
 import numpy as np
 from omero import grid
@@ -37,9 +37,8 @@ from omero.model import (
 )
 from omero.rtypes import rdouble, rint, rlong, rstring
 from pandas import DataFrame
-from pydantic.color import Color
 
-from microscopemetrics.model import model as mm_model
+from microscopemetrics.data_schema import core_schema as mm_schema
 
 DTYPES_NP_TO_OMERO = {
     "int8": enums.PixelsTypeint8,
@@ -84,6 +83,16 @@ COLUMN_TYPES = {
     "file": grid.FileColumn,
 }
 
+
+def get_object_from_url(url: str) -> List[Tuple[str, int]]:
+    """Get the ID from an OMERO URL. For example:
+    https://omero.server.fr/webclient/?show=image-12345 or
+    https://omero.mri.cnrs.fr/webclient/?show=image-1556622|image-1556623 for multiple objects"""
+    tail = url.split("/")[-1].split("=")[-1]  # TODO: make all of this a regex
+    if "|" in tail:
+        return [(x.split("-")[0], int(x.split("-")[-1])) for x in tail.split("|")]
+    else:
+        return [(tail.split("-")[0], int(tail.split("-")[-1]))]
 
 def _label_channels(image, labels):
     if len(labels) != image.getSizeC():
@@ -446,10 +455,10 @@ def _rgba_to_int(rgba_color: Color):
 
 def _set_shape_properties(
     shape,
-    name=None,
-    fill_color: Color=Color("grey"),
-    stroke_color: Color=Color("white"),
-    stroke_width: int=1,
+    name: str,
+    fill_color: mm_schema.Color,
+    stroke_color: mm_schema.Color,
+    stroke_width: int,
 ):
     if name is not None:
         shape.setTextValue(rstring(name))
@@ -458,126 +467,126 @@ def _set_shape_properties(
     shape.setStrokeWidth(LengthI(stroke_width, enums.UnitsLength.PIXEL))
 
 
-def create_shape_point(shape: mm_model.Point):
+def create_shape_point(mm_point: mm_schema.Point):
     point = PointI()
-    point.x = rdouble(shape.x)
-    point.y = rdouble(shape.y)
-    if shape.z is not None:
-        point.theZ = rint(shape.z)
-    if shape.c is not None:
-        point.theC = rint(shape.c)
-    if shape.t is not None:
-        point.theT = rint(shape.t)
+    point.x = rdouble(mm_point.x)
+    point.y = rdouble(mm_point.y)
+    if mm_point.z is not None:
+        point.theZ = rint(mm_point.z)
+    if mm_point.c is not None:
+        point.theC = rint(mm_point.c)
+    if mm_point.t is not None:
+        point.theT = rint(mm_point.t)
     _set_shape_properties(
         shape=point,
-        name=shape.label,
-        stroke_color=shape.stroke_color,
-        stroke_width=shape.stroke_width,
-        fill_color=shape.fill_color,
+        name=mm_point.label,
+        stroke_color=mm_point.stroke_color,
+        stroke_width=mm_point.stroke_width,
+        fill_color=mm_point.fill_color,
     )
     return point
 
 
-def create_shape_line(shape: mm_model.Line):
+def create_shape_line(mm_line: mm_schema.Line):
     line = LineI()
-    line.x1 = rdouble(shape.x1)
-    line.x2 = rdouble(shape.x2)
-    line.y1 = rdouble(shape.y1)
-    line.y2 = rdouble(shape.y2)
-    line.theZ = rint(shape.z)
-    line.theT = rint(shape.t)
-    if shape.c is not None:
-        line.theC = rint(shape.c)
+    line.x1 = rdouble(mm_line.x1)
+    line.x2 = rdouble(mm_line.x2)
+    line.y1 = rdouble(mm_line.y1)
+    line.y2 = rdouble(mm_line.y2)
+    line.theZ = rint(mm_line.z)
+    line.theT = rint(mm_line.t)
+    if mm_line.c is not None:
+        line.theC = rint(mm_line.c)
     _set_shape_properties(
         shape=line,
-        name=shape.label,
-        stroke_color=shape.stroke_color,
-        stroke_width=shape.stroke_width
+        name=mm_line.label,
+        stroke_color=mm_line.stroke_color,
+        stroke_width=mm_line.stroke_width
     )
     return line
 
 
-def create_shape_rectangle(shape: mm_model.Rectangle):
+def create_shape_rectangle(mm_rectangle: mm_schema.Rectangle):
     rect = RectangleI()
-    rect.x = rdouble(shape.x)
-    rect.y = rdouble(shape.y)
-    rect.width = rdouble(shape.w)
-    rect.height = rdouble(shape.h)
-    rect.theZ = rint(shape.z)
-    rect.theT = rint(shape.t)
+    rect.x = rdouble(mm_rectangle.x)
+    rect.y = rdouble(mm_rectangle.y)
+    rect.width = rdouble(mm_rectangle.w)
+    rect.height = rdouble(mm_rectangle.h)
+    rect.theZ = rint(mm_rectangle.z)
+    rect.theT = rint(mm_rectangle.t)
     _set_shape_properties(
         shape=rect,
-        name=shape.label,
-        fill_color=shape.fill_color,
-        stroke_color=shape.stroke_color,
-        stroke_width=shape.stroke_width,
+        name=mm_rectangle.label,
+        fill_color=mm_rectangle.fill_color,
+        stroke_color=mm_rectangle.stroke_color,
+        stroke_width=mm_rectangle.stroke_width,
     )
     return rect
 
 
-def create_shape_ellipse(shape: mm_model.Ellipse):
+def create_shape_ellipse(mm_ellipse: mm_schema.Ellipse):
     ellipse = EllipseI()
-    ellipse.setX(rdouble(shape.x))
-    ellipse.setY(rdouble(shape.y))  # TODO: setters and getters everywhere
-    ellipse.radiusX = rdouble(shape.x_rad)
-    ellipse.radiusY = rdouble(shape.y_rad)
-    ellipse.theZ = rint(shape.z)
-    ellipse.theT = rint(shape.t)
+    ellipse.setX(rdouble(mm_ellipse.x))
+    ellipse.setY(rdouble(mm_ellipse.y))  # TODO: setters and getters everywhere
+    ellipse.radiusX = rdouble(mm_ellipse.x_rad)
+    ellipse.radiusY = rdouble(mm_ellipse.y_rad)
+    ellipse.theZ = rint(mm_ellipse.z)
+    ellipse.theT = rint(mm_ellipse.t)
     _set_shape_properties(
         ellipse,
-        name=shape.label,
-        fill_color=shape.fill_color,
-        stroke_color=shape.stroke_color,
-        stroke_width=shape.stroke_width,
+        name=mm_ellipse.label,
+        fill_color=mm_ellipse.fill_color,
+        stroke_color=mm_ellipse.stroke_color,
+        stroke_width=mm_ellipse.stroke_width,
     )
     return ellipse
 
 
-def create_shape_polygon(shape: mm_model.Polygon):
+def create_shape_polygon(mm_polygon: mm_schema.Polygon):
     polygon = PolygonI()
     points_str = "".join(
-        ["".join([str(x), ",", str(y), ", "]) for x, y in shape.points]
+        ["".join([str(x), ",", str(y), ", "]) for x, y in mm_polygon.points]
     )[:-2]
     polygon.points = rstring(points_str)
-    polygon.theZ = rint(shape.z)
-    polygon.theT = rint(shape.t)
+    polygon.theZ = rint(mm_polygon.z)
+    polygon.theT = rint(mm_polygon.t)
     _set_shape_properties(
         polygon,
-        name=shape.label,
-        fill_color=shape.fill_color,
-        stroke_color=shape.stroke_color,
-        stroke_width=shape.stroke_width,
+        name=mm_polygon.label,
+        fill_color=mm_polygon.fill_color,
+        stroke_color=mm_polygon.stroke_color,
+        stroke_width=mm_polygon.stroke_width,
     )
     return polygon
 
 
-def create_shape_mask(shape: mm_model.Mask):
+def create_shape_mask(mm_mask: mm_schema.Mask):
     mask = MaskI()
-    mask.setX(rdouble(shape.x))
-    mask.setY(rdouble(shape.y))
-    mask.setTheZ(rint(shape.z))
-    mask.setTheT(rint(shape.t))
-    mask.setWidth(rdouble(shape.mask.shape[0]))
-    mask.setHeight(rdouble(shape.mask.shape[1]))
-    mask_packed = np.packbits(shape.mask)  # TODO: raise error when not boolean array
-    mask.setBytes(mask_packed.tobytes())
+    mask.setX(rdouble(mm_mask.x))
+    mask.setY(rdouble(mm_mask.y))
+    mask.setTheZ(rint(mm_mask.z))
+    mask.setTheT(rint(mm_mask.t))
+    mask.setWidth(rdouble(mm_mask.mask.x))  # TODO: see how to get shape if not np.array
+    mask.setHeight(rdouble(mm_mask.mask.y))
+    mask_packed = np.packbits(mm_mask.mask.data)  # TODO: raise error when not boolean array
+    mask.setBytes(mask_packed.tobytes())  # TODO: review how to setBytes when not a np.array
     _set_shape_properties(
         mask,
-        name=shape.label,
-        fill_color=shape.fill_color,
+        name=mm_mask.label,
+        fill_color=mm_mask.fill_color,
     )
     return mask
 
 
-def create_tag(conn, tag_string, omero_object, description=None):
+def create_tag(conn: BlitzGateway, tag: mm_schema.Tag, omero_object):
     tag_ann = TagAnnotationWrapper(conn)
-    tag_ann.setValue(tag_string)
-    if description is not None:
-        tag_ann.setDescription(description)
+    tag_ann.setValue(tag.text)
+    tag_ann.setDescription(tag.description)
     tag_ann.save()
 
     _link_annotation(omero_object, tag_ann)
 
+    tag.id = tag_ann.getId()
 
 def _serialize_map_value(value):
     if isinstance(value, str):
@@ -743,18 +752,23 @@ def create_comment(conn, comment_value, omero_object, namespace=None):
     _link_annotation(omero_object, comment_ann)
 
 
-def _link_annotation(object_wrapper, annotation_wrapper):
+def _link_annotation(object_wrapper: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                     annotation_wrapper: Union[
+                         TagAnnotationWrapper,
+                         MapAnnotationWrapper,
+                         FileAnnotationWrapper,
+                         CommentAnnotationWrapper]):
     object_wrapper.linkAnnotation(annotation_wrapper)
 
 
-def _link_dataset_to_project(conn, dataset, project):
+def _link_dataset_to_project(conn: BlitzGateway, dataset: DatasetWrapper, project: ProjectWrapper):
     link = ProjectDatasetLinkI()
     link.setParent(ProjectI(project.getId(), False))  # linking to a loaded project might raise exception
     link.setChild(DatasetI(dataset.getId(), False))
     conn.getUpdateService().saveObject(link)
 
 
-def _link_image_to_dataset(conn, image, dataset):
+def _link_image_to_dataset(conn: BlitzGateway, image: ImageWrapper, dataset: DatasetWrapper):
     link = DatasetImageLinkI()
     link.setParent(DatasetI(dataset.getId(), False))
     link.setChild(ImageI(image.getId(), False))
