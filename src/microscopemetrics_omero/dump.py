@@ -1,9 +1,11 @@
 import logging
 
+from typing import Union
+
 from microscopemetrics_omero import omero_tools
 from microscopemetrics import samples as mm_samples
 from microscopemetrics.data_schema import core_schema as mm_schema
-from omero.gateway import BlitzGateway, ImageWrapper
+from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetrics_omero.dump")
@@ -42,7 +44,10 @@ def dump_image_process(
         )
 
 
-def _dump_output_image(conn: BlitzGateway, output_image: mm_schema.Image, source_image, namespace):
+def _dump_output_image(conn: BlitzGateway,
+                       output_image: mm_schema.Image,
+                       source_image,
+                       namespace: str):
     # TODO: add channel labels to the output image
     omero_tools.create_image_from_numpy_array(conn=conn,
                                               data=output_image.data,
@@ -58,7 +63,10 @@ def _dump_output_image(conn: BlitzGateway, output_image: mm_schema.Image, source
     # TODO: We should consider that we might want to add metadata to an output image
 
 
-def _dump_output_roi(conn, output_roi, image, namespace):
+def _dump_output_roi(conn: BlitzGateway,
+                     output_roi: mm_schema.Roi,
+                     image: ImageWrapper,
+                     namespace: str):
     shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in output_roi.shapes]
     omero_tools.create_roi(
         conn=conn,
@@ -69,7 +77,10 @@ def _dump_output_roi(conn, output_roi, image, namespace):
     )
 
 
-def _dump_output_tag(conn: BlitzGateway, output_tag: mm, omero_object, namespace):
+def _dump_output_tag(conn: BlitzGateway,
+                     output_tag: mm_schema.Tag,
+                     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                     namespace: str):
     omero_tools.create_tag(
         conn=conn,
         tag=output_tag.tag_value,
@@ -77,7 +88,10 @@ def _dump_output_tag(conn: BlitzGateway, output_tag: mm, omero_object, namespace
     )
 
 
-def _dump_output_key_value(conn, output_key_values, omero_object, namespace):
+def _dump_output_key_value(conn: BlitzGateway,
+                           output_key_values: mm_schema.KeyValues,
+                           omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                           namespace: str):
     omero_tools.create_key_value(
         conn=conn,
         annotation=output_key_values.key_values,
@@ -88,7 +102,10 @@ def _dump_output_key_value(conn, output_key_values, omero_object, namespace):
     )
 
 
-def _dump_output_table(conn, output_table, omero_object, namespace):
+def _dump_output_table(conn: BlitzGateway,
+                       output_table: mm_schema.Table,
+                       omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                       namespace: str):
     omero_tools.create_table(
         conn=conn,
         table=output_table.table,
@@ -99,7 +116,10 @@ def _dump_output_table(conn, output_table, omero_object, namespace):
     )
 
 
-def _dump_comment(conn, output_comment, omero_object, namespace):
+def _dump_comment(conn: BlitzGateway,
+                  output_comment: mm_schema.Comment,
+                  omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                  namespace: str):
     omero_tools.create_comment(
         conn=conn,
         comment_value=output_comment.comment,
