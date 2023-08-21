@@ -450,7 +450,7 @@ def create_roi(conn, image, shapes, name, description):
     return conn.getUpdateService().saveAndReturnObject(roi)
 
 
-def _rgba_to_int(rgba_color: Color):
+def _rgba_to_int(rgba_color: mm_schema.Color):
     """Return the color as an Integer in RGBA encoding"""
     rgba_color = rgba_color.as_rgb_tuple(alpha=True)
     r = rgba_color[0] << 24

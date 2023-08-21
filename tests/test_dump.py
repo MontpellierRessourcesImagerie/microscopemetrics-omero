@@ -1,19 +1,22 @@
 from numpy import ndarray
 import microscopemetrics_omero.dump as dump
 
-def test_dump_image_process(conn, microscopemetrics_finished_analysis, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
-    image = conn.getObject("Image", im_id)
-    dump.dump_image_process(conn, image, microscopemetrics_finished_analysis, "test_namespace")
-
-#
-# def test_dump_output_image(conn, microscopemetrics_finished_analysis, project_structure):
+# def test_dump_image_process(conn, microscopemetrics_finished_analysis, project_structure):
 #     image_info = project_structure[2]
 #     im_id = image_info[0][1]
 #     image = conn.getObject("Image", im_id)
-#     pass
+#     dump.dump_image_process(conn, image, microscopemetrics_finished_analysis, "test_namespace")
 #
+#
+def test_dump_output_image(conn, microscopemetrics_finished_analysis, project_structure):
+    image_info = project_structure[2]
+    im_id = image_info[0][1]
+    image = conn.getObject("Image", im_id)
+
+    dump.dump_output_image(conn=conn,
+                           output_image=microscopemetrics_finished_analysis.output.intensity_map,
+                           source_image=image)
+
 #
 # def test_dump_output_roi(conn, mm_roi_fixture, project_structure):
 #     image_info = project_structure[2]

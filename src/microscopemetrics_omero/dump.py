@@ -1,6 +1,7 @@
 import logging
 
 from typing import Union
+import numpy as np
 
 from dataclasses import fields
 
@@ -25,14 +26,28 @@ def dump_output_image(conn: BlitzGateway,
                       output_image: mm_schema.Image,
                       source_image,
                       ):
+    if isinstance(output_image, mm_schema.Image5D):
+        # TZYXC -> zctyx
+        image_data = np.array(output_image.data).reshape(
+            (
+                int(output_image.t.values[0]),
+                int(output_image.z.values[0]),
+                int(output_image.y.values[0]),
+                int(output_image.x.values[0]),
+                int(output_image.c.values[0])
+            )
+        ).transpose((1, 4, 0, 2, 3))
+    else:
+        return
     # TODO: add channel labels to the output image
     omero_tools.create_image_from_numpy_array(conn=conn,
-                                              data=output_image.data,
+                                              data=image_data,
                                               image_name=output_image.name,
                                               image_description=f"{output_image.description}.\n" f"Source image:{source_image.getId()}",
                                               channel_labels=None,
                                               dataset=source_image.getParent(),
-                                              source_image_id=source_image.getId(),
+                                              # source_image_id=source_image.getId(),
+                                              source_image_id=None,
                                               channels_list=None,
                                               force_whole_planes=False
                                               )
