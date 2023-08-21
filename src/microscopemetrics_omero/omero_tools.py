@@ -94,6 +94,12 @@ def get_object_from_url(url: str) -> List[Tuple[str, int]]:
     else:
         return [(tail.split("-")[0], int(tail.split("-")[-1]))]
 
+
+def get_url_from_object(obj: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]) -> str:
+    """Get the URL from an OMERO object"""
+    return obj._conn.c.host + "/webclient/?show=" + obj.OMERO_TYPE + "-" + str(obj.getId())
+
+
 def _label_channels(image, labels):
     if len(labels) != image.getSizeC():
         raise ValueError('The length of the channel labels is not of the same size as the size of the c dimension')
@@ -139,7 +145,12 @@ def _get_pixel_size_units(image):
 
 
 def get_image_intensities(
-    image, z_range=None, c_range=None, t_range=None, y_range=None, x_range=None
+        image: ImageWrapper,
+        z_range=None,
+        c_range: range = None,
+        t_range: range = None,
+        y_range: range = None,
+        x_range: range = None
 ):
     """Returns a numpy array containing the intensity values of the image
     Returns an array with dimensions arranged as zctyx
@@ -303,12 +314,12 @@ def _create_image_whole(conn, data, image_name, image_description=None, dataset=
 def create_image_from_numpy_array(conn: BlitzGateway,
                                   data: np.ndarray,
                                   image_name: str,
-                                  image_description: str=None,
-                                  channel_labels: Union[list, tuple]=None,
-                                  dataset: DatasetWrapper=None,
-                                  source_image_id: int=None,
-                                  channels_list: list[int]=None,
-                                  force_whole_planes: bool=False):
+                                  image_description: str = None,
+                                  channel_labels: Union[list, tuple] = None,
+                                  dataset: DatasetWrapper = None,
+                                  source_image_id: int = None,
+                                  channels_list: list[int] = None,
+                                  force_whole_planes: bool = False):
     """
     Creates a new image in OMERO from a n dimensional numpy array.
     :param channel_labels: A list of channel labels
@@ -706,10 +717,10 @@ def _create_columns(table):
 def create_table(
     conn: BlitzGateway,
     table: DataFrame,
-    table_name,
-    omero_object,
-    table_description,
-    namespace=None,
+    table_name: str,
+    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    table_description: str,
+    namespace: str,
 ):
     """Creates a table annotation from a pandas dataframe"""
 
@@ -739,7 +750,10 @@ def create_table(
     _link_annotation(omero_object, file_ann)
 
 
-def create_comment(conn, comment_value, omero_object, namespace=None):
+def create_comment(conn: BlitzGateway,
+                   comment_value: str,
+                   omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                   namespace: str):
     if namespace is None:
         namespace = (
             metadata.NSCLIENTMAPANNOTATION

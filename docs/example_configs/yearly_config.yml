@@ -20,9 +20,10 @@ assays:  # These are the OMERO datasets. One dataset per type of analysis
     do_analysis: true
     sample: argolight
     analysis_class: ArgolightBAnalysis
+    name: Argolight B
     description: Argolight B analysis (spots pattern)
     data:
-      name: argolight_b
+      name: argolight_b_image
       tag_id: 1274  # TODO: move to main config
     parameters:
       remove_center_cross: true

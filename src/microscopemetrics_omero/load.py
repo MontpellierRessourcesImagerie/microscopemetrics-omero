@@ -1,7 +1,11 @@
 import logging
 
 from microscopemetrics_omero import omero_tools
-from omero.gateway import ImageWrapper
+from omero.gateway import (
+    ImageWrapper,
+    DatasetWrapper,
+    ProjectWrapper,
+)
 import numpy as np
 
 # Creating logging services
@@ -12,3 +16,9 @@ def load_image(image: ImageWrapper) -> np.ndarray:
     return omero_tools.get_image_intensities(image)
 
 
+def load_dataset(dataset):
+    pass
+
+
+def load_project(project):
+    pass

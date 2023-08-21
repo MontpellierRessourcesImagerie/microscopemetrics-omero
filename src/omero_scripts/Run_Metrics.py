@@ -118,7 +118,6 @@ def run_script():
                 script_params[key] = client.getInput(key, unwrap=True)
 
         logger.info(f"Metrics started using parameters: \n{script_params}")
-        logger.info(f"Start time: {datetime.now()}")
 
         with open("/etc/omero_metrics/main_config.yaml", "r") as f:
             main_config = yaml.load(f, Loader=yaml.SafeLoader)
@@ -127,12 +126,9 @@ def run_script():
 
         logger.info(f"Connection success: {conn.isConnected()}")
 
-        datasets = conn.getObjects(
-            "Dataset", script_params["IDs"]
-        )  # generator of datasets
+        datasets = conn.getObjects("Dataset", script_params["IDs"])
 
         for dataset in datasets:
-            # Get the project / microscope
             microscope_prj = dataset.getParent()  # We assume one project per dataset
 
             device_config_file_name = main_config["MAIN"]["device_conf_file_name"]
@@ -140,8 +136,19 @@ def run_script():
                 if type(ann) == gateway.FileAnnotationWrapper:
                     if ann.getFileName() == script_params["Configuration file name"]:
                         analyses_config = _read_config_from_file_ann(ann)
-                    elif ann.getFileName() == device_config_file_name:
+                    if ann.getFileName() == device_config_file_name:
                         device_config = _read_config_from_file_ann(ann)
+
+            if not analyses_config:
+                logger.error(
+                    f"No analysis configuration found for dataset {dataset.getName()}"
+                )
+                continue
+            if not device_config:
+                logger.error(
+                    f"No device configuration found for dataset {dataset.getName()}"
+                )
+                continue
 
             config = {
                 "main_config": main_config,
@@ -153,17 +160,14 @@ def run_script():
                 conn=conn, script_params=script_params, dataset=dataset, config=config
             )
 
-        logger.info(f"End time: {datetime.now()}")
+        logger.info(f"Metrics analysis finished")
 
     finally:
         logger.info("Closing connection")
 
-        # Outputting log for user
         client.setOutput("Message", rstring(log_string.getvalue()))
-
         client.closeSession()
 
 
 if __name__ == "__main__":
     run_script()
-    # run_script_local()

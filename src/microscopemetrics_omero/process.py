@@ -1,39 +1,41 @@
 import logging
 from datetime import datetime
 from typing import Union
+from dataclasses import fields
 
 from microscopemetrics_omero import omero_tools
-from microscopemetrics import samples
+from microscopemetrics.samples import (
+    argolight,
+    field_illumination
+)
+from microscopemetrics.data_schema import core_schema as mm_schema
 from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
-from dump import dump_image_process
+from microscopemetrics_omero import dump, load
 
 # Creating logging services
 module_logger = logging.getLogger("microscopemetrics_omero.process")
 
-# Namespace constants
-NAMESPACE_PREFIX = "microscopemetrics"
-NAMESPACE_ANALYZED = "analyzed"
-NAMESPACE_VALIDATED = "validated"
-# TODO: Add a special case editable
 
 ANALYSIS_CLASS_MAPPINGS = {
-    "ArgolightBAnalysis": samples.argolight.ArgolightBAnalysis,
-    "ArgolightEAnalysis": samples.argolight.ArgolightEAnalysis,
-    "PSFBeadsAnalysis": samples.psf_beads.PSFBeadsAnalysis,
+    "ArgolightBAnalysis": argolight.ArgolightBAnalysis,
+    "ArgolightEAnalysis": argolight.ArgolightEAnalysis,
+    "PSFBeadsAnalysis": field_illumination.FieldIlluminationAnalysis,
+}
+
+INPUT_TYPE_TO_LOAD_FUNCTION = {
+    mm_schema.Image: load.load_image,
+    mm_schema.Dataset: load.load_dataset,
+    mm_schema.Project: load.load_project,
 }
 
 
-def _generate_namespace(sections: list = (NAMESPACE_PREFIX, NAMESPACE_ANALYZED)) -> str:
-    # TODO: get version directly from package
-    return "/".join(sections)
-
-
-def _annotate_processing(conn: BlitzGateway,
-                         omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-                         start_time,
-                         end_time,
-                         analysis_config) -> None:
+def _annotate_processing(omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                         start_time: datetime.time,
+                         end_time: datetime.time,
+                         analysis_config: dict,
+                         namespace: str
+                         ) -> None:
     annotation = {
         "analysis_class": analysis_config["analysis_class"],
         "start_time": str(start_time),
@@ -42,68 +44,130 @@ def _annotate_processing(conn: BlitzGateway,
     }
 
     omero_tools.create_key_value(
-        conn=conn,
+        conn=omero_object._conn,
         annotation=annotation,
         omero_object=omero_object,
         annotation_name="microscopemetrics processing metadata",
-        namespace=_generate_namespace(),
+        namespace=namespace,
     )
 
 
 def process_image(
-    conn: BlitzGateway, image: ImageWrapper, analysis_config: dict
-) -> None:
-    start_time = datetime.now()
-    # Create analysis instance
-    analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]]()
-    analysis.set_data(
-        analysis_config["data"]["name"], omero_tools.get_image_intensities(image)
+    image: ImageWrapper, analysis_config: dict
+) -> mm_schema.MetricsDataset:
+    analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]](
+        name=analysis_config["name"],
+        description=analysis_config["description"],
+        input={
+            analysis_config["data"]["name"]: {
+                "data": omero_tools.get_image_intensities(image),
+                "name": image.getName(),
+                "image_url": omero_tools.get_url_from_object(image),
+            },
+            **analysis_config["parameters"],
+        },
+        output={},
     )
-    for par, val in analysis_config["parameters"].items():
-        analysis.set_metadata(par, val)
-
-    module_logger.info(
-        f"Running analysis {analysis_config['analysis_class']} on image {image.getId()}"
-    )
+    module_logger.info(f"Running analysis {analysis.class_name} on image: {image.getId()}")
 
     analysis.run()
 
-    dump_image_process(conn=conn,
-                       image=image,
-                       analysis=analysis,
-                       namespace=_generate_namespace())
+    module_logger.info(f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed")
 
-    module_logger.info(
-        f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed"
-    )
-
-    end_time = datetime.now()
-    module_logger.info("Annotating processing metadata")
-    _annotate_processing(
-        conn=conn,
-        omero_object=image,
-        start_time=start_time,
-        end_time=end_time,
-        analysis_config=analysis_config,
-    )
+    return analysis
 
 
-def process_dataset(conn, script_params, dataset, config):
-    # TODO: must note in mapann the analyses that were done
-    # TODO: do something to automate selection of microscope type
+def process_dataset(
+        script_params: dict,
+        dataset: DatasetWrapper,
+        config: dict
+) -> None:
+    # TODO: must note in map_ann the analyses that were done
+    # TODO: get comment from script_params
+    # TODO: how to process multi-image analysis?
 
     module_logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
-    module_logger.info(f"Date and time: {datetime.now()}")
 
     for analysis_name, analysis_config in config["analyses_config"]["assays"].items():
         if analysis_config["do_analysis"]:
             module_logger.info(
                 f"Running analysis {analysis_name}..."
             )
+            # TODO: verify if the analysis was already done
 
             images = omero_tools.get_tagged_images_in_dataset(
                 dataset, analysis_config["data"]["tag_id"]
             )
 
             for image in images:
-                process_image(conn=conn, image=image, analysis_config=analysis_config)
+                start_time = datetime.now()
+
+                mm_dataset = process_image(image=image, analysis_config=analysis_config)
+                if not mm_dataset.processed:
+                    module_logger.error("Analysis failed. Not dumping data")
+
+                dump_image_process(
+                    image=image,
+                    analysis=mm_dataset,
+                )
+                end_time = datetime.now()
+
+                module_logger.info("Annotating processing metadata")
+                _annotate_processing(
+                    omero_object=image,
+                    start_time=start_time,
+                    end_time=end_time,
+                    analysis_config=analysis_config,
+                    namespace=mm_dataset.class_model_uri,
+                )
+
+
+def dump_image_process(
+    image: ImageWrapper,
+    analysis: mm_schema.MetricsDataset,
+) -> None:
+    for output_field in fields(analysis.output):
+        output_element = getattr(analysis.output, output_field.name)
+        dump_output_element(
+            output_element=output_element,
+            omero_object=image,
+        )
+
+
+def dump_output_element(
+    output_element: mm_schema.MetricsOutput,
+    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+) -> None:
+    module_logger.info(f"Dumping {output_element.name}")
+    conn = omero_object._conn
+    if isinstance(output_element, list):
+        [dump_output_element(conn, e, omero_object) for e in output_element]
+    elif isinstance(output_element, mm_schema.Image):
+        dump.dump_output_image(conn, output_element, omero_object)
+    elif isinstance(output_element, mm_schema.ROI):
+        dump.dump_output_roi(conn, output_element, omero_object)
+    elif isinstance(output_element, mm_schema.Tag):
+        dump.dump_output_tag(conn, output_element, omero_object)
+    elif isinstance(output_element, mm_schema.KeyValues):
+        dump.dump_output_key_value(conn, output_element, omero_object)
+    elif isinstance(output_element, mm_schema.Table):
+        dump.dump_output_table(conn, output_element, omero_object)
+
+    # TODO: make this a match statement
+    # match output_element:
+    #     case list():
+    #         [dump_output_element(conn, e, omero_object, namespace) for e in output_element]
+    #     case mm_schema.Image():
+    #         dump.dump_output_image(conn, output_element, omero_object)
+    #     case mm_schema.ROI():
+    #         dump.dump_output_roi(conn, output_element, omero_object)
+    #     case mm_schema.Tag():
+    #         dump.dump_output_tag(conn, output_element, omero_object)
+    #     case mm_schema.KeyValues():
+    #         dump.dump_output_key_value(conn, output_element, omero_object)
+    #     case mm_schema.Table():
+    #         dump.dump_output_table(conn, output_element, omero_object)
+    #     case mm_schema.Comment():
+    #         dump.dump_comment(conn, output_element, omero_object)
+    #
+
