@@ -52,23 +52,24 @@ def dump_output_image(conn: BlitzGateway,
     else:
         module_logger.error(f"Unsupported image type for {output_image.name}: {output_image.class_name}")
         return None
+    source_image_id = None
     try:
-        source_image_id = omero_tools.get_object_from_url(output_image.source_image_url)[0][1]
+        source_image_id = omero_tools.get_object_from_url(output_image.source_image_url[0])[1]
     except IndexError:
         module_logger.info(f"No source image id provided for {output_image.name}")
-        source_image_id = None
+    except ValueError:
+        module_logger.info(f"Invalid source image url provided for {output_image.name}")
     # TODO: add channel labels to the output image
     return omero_tools.create_image_from_numpy_array(conn=conn,
-                                                      data=image_data,
-                                                      image_name=output_image.name,
-                                                      image_description=f"{output_image.description}.\n" 
-                                                                        f"Source image:{omero_tools.get_object_from_url(output_image.source_image_url}",
-                                                      channel_labels=None,
-                                                      dataset=target_dataset,
-                                                      source_image_id=source_image_id,
-                                                      channels_list=None,
-                                                      force_whole_planes=False
-                                                      )
+                                                     data=image_data,
+                                                     image_name=output_image.name,
+                                                     image_description=f"{output_image.description}.\nSource image:{source_image_id}",
+                                                     channel_labels=None,
+                                                     dataset=target_dataset,
+                                                     source_image_id=source_image_id,
+                                                     channels_list=None,
+                                                     force_whole_planes=False
+                                                     )
 
     # TODO: We should consider that we might want to add metadata to an output image
 
@@ -83,7 +84,7 @@ def dump_output_roi(conn: BlitzGateway,
         conn=conn,
         image=image,
         shapes=shapes,
-        name=output_roi.name,
+        name=output_roi.label,
         description=output_roi.description,
     )
 

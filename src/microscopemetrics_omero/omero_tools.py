@@ -427,15 +427,6 @@ def _get_tile_list(zct_list, data_shape, tile_size):
 
 
 def create_roi(conn, image, shapes, name, description):
-    type_to_func = {
-        "point": create_shape_point,
-        "line": create_shape_line,
-        "rectangle": create_shape_rectangle,
-        "ellipse": create_shape_ellipse,
-        "polygon": create_shape_polygon,
-        "mask": create_shape_mask,
-    }
-
     # create an ROI, link it to Image
     roi = RoiI()  # TODO: work with wrappers
     # use the omero.model.ImageI that underlies the 'image' wrapper
@@ -443,7 +434,7 @@ def create_roi(conn, image, shapes, name, description):
     if name is not None:
         roi.setName(rstring(name))
     if description is not None:
-        roi.setDescription(rstring(name))
+        roi.setDescription(rstring(description))
     for shape in shapes:
         roi.addShape(shape)
     # Save the ROI (saves any linked shapes too)
@@ -452,11 +443,10 @@ def create_roi(conn, image, shapes, name, description):
 
 def _rgba_to_int(rgba_color: mm_schema.Color):
     """Return the color as an Integer in RGBA encoding"""
-    rgba_color = rgba_color.as_rgb_tuple(alpha=True)
-    r = rgba_color[0] << 24
-    g = rgba_color[1] << 16
-    b = rgba_color[2] << 8
-    a = rgba_color[3]
+    r = rgba_color.r << 24
+    g = rgba_color.g << 16
+    b = rgba_color.b << 8
+    a = rgba_color.alpha
     rgba_int = sum([r, g, b, a])
     if rgba_int > (2**31 - 1):  # convert to signed 32-bit int
         rgba_int = rgba_int - 2**32
@@ -466,16 +456,19 @@ def _rgba_to_int(rgba_color: mm_schema.Color):
 
 def _set_shape_properties(
     shape,
-    name: str,
-    fill_color: mm_schema.Color,
-    stroke_color: mm_schema.Color,
-    stroke_width: int,
+    label: str = None,
+    fill_color: mm_schema.Color = None,
+    stroke_color: mm_schema.Color = None,
+    stroke_width: int = None,
 ):
-    if name is not None:
-        shape.setTextValue(rstring(name))
-    shape.setFillColor(rint(_rgba_to_int(fill_color)))
-    shape.setStrokeColor(rint(_rgba_to_int(stroke_color)))
-    shape.setStrokeWidth(LengthI(stroke_width, enums.UnitsLength.PIXEL))
+    if label is not None:
+        shape.setTextValue(rstring(label))
+    if fill_color is not None:
+        shape.setFillColor(rint(_rgba_to_int(fill_color)))
+    if stroke_color is not None:
+        shape.setStrokeColor(rint(_rgba_to_int(stroke_color)))
+    if stroke_width is not None:
+        shape.setStrokeWidth(LengthI(stroke_width, enums.UnitsLength.PIXEL))
 
 
 def create_shape_point(mm_point: mm_schema.Point):
@@ -490,7 +483,7 @@ def create_shape_point(mm_point: mm_schema.Point):
         point.theT = rint(mm_point.t)
     _set_shape_properties(
         shape=point,
-        name=mm_point.label,
+        label=mm_point.label,
         stroke_color=mm_point.stroke_color,
         stroke_width=mm_point.stroke_width,
         fill_color=mm_point.fill_color,
@@ -510,7 +503,7 @@ def create_shape_line(mm_line: mm_schema.Line):
         line.theC = rint(mm_line.c)
     _set_shape_properties(
         shape=line,
-        name=mm_line.label,
+        label=mm_line.label,
         stroke_color=mm_line.stroke_color,
         stroke_width=mm_line.stroke_width
     )
@@ -527,7 +520,7 @@ def create_shape_rectangle(mm_rectangle: mm_schema.Rectangle):
     rect.theT = rint(mm_rectangle.t)
     _set_shape_properties(
         shape=rect,
-        name=mm_rectangle.label,
+        label=mm_rectangle.label,
         fill_color=mm_rectangle.fill_color,
         stroke_color=mm_rectangle.stroke_color,
         stroke_width=mm_rectangle.stroke_width,
@@ -545,7 +538,7 @@ def create_shape_ellipse(mm_ellipse: mm_schema.Ellipse):
     ellipse.theT = rint(mm_ellipse.t)
     _set_shape_properties(
         ellipse,
-        name=mm_ellipse.label,
+        label=mm_ellipse.label,
         fill_color=mm_ellipse.fill_color,
         stroke_color=mm_ellipse.stroke_color,
         stroke_width=mm_ellipse.stroke_width,
@@ -556,14 +549,14 @@ def create_shape_ellipse(mm_ellipse: mm_schema.Ellipse):
 def create_shape_polygon(mm_polygon: mm_schema.Polygon):
     polygon = PolygonI()
     points_str = "".join(
-        ["".join([str(x), ",", str(y), ", "]) for x, y in mm_polygon.points]
+        ["".join([str(vertex.x), ",", str(vertex.y), ", "]) for vertex in mm_polygon.vertexes]
     )[:-2]
     polygon.points = rstring(points_str)
     polygon.theZ = rint(mm_polygon.z)
     polygon.theT = rint(mm_polygon.t)
     _set_shape_properties(
         polygon,
-        name=mm_polygon.label,
+        label=mm_polygon.label,
         fill_color=mm_polygon.fill_color,
         stroke_color=mm_polygon.stroke_color,
         stroke_width=mm_polygon.stroke_width,
@@ -577,13 +570,13 @@ def create_shape_mask(mm_mask: mm_schema.Mask):
     mask.setY(rdouble(mm_mask.y))
     mask.setTheZ(rint(mm_mask.z))
     mask.setTheT(rint(mm_mask.t))
-    mask.setWidth(rdouble(mm_mask.mask.x))  # TODO: see how to get shape if not np.array
-    mask.setHeight(rdouble(mm_mask.mask.y))
+    mask.setWidth(rdouble(mm_mask.mask.x.values[0]))  # TODO: see how to get shape if not np.array
+    mask.setHeight(rdouble(mm_mask.mask.y.values[0]))
     mask_packed = np.packbits(mm_mask.mask.data)  # TODO: raise error when not boolean array
     mask.setBytes(mask_packed.tobytes())  # TODO: review how to setBytes when not a np.array
     _set_shape_properties(
         mask,
-        name=mm_mask.label,
+        label=mm_mask.label,
         fill_color=mm_mask.fill_color,
     )
     return mask

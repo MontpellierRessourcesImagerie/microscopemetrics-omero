@@ -5,15 +5,15 @@ import numpy as np
 from datetime import datetime
 from omero.cli import CLI
 from omero.gateway import BlitzGateway
-from omero.gateway import ScreenWrapper, PlateWrapper
-from omero.model import ScreenI, PlateI, WellI, WellSampleI, ImageI
-from omero.model import ScreenPlateLinkI
 from omero.plugins.sessions import SessionsControl
 from omero.plugins.user import UserControl
 from omero.plugins.group import GroupControl
 from omero.rtypes import rint
 import importlib.util
 import pandas as pd
+
+import microscopemetrics.data_schema.core_schema as mm_schema
+from microscopemetrics.samples import numpy_to_inlined_image, numpy_to_inlined_mask, dict_to_inlined_table
 
 # TODO: make a test dataset programmatically
 from microscopemetrics.samples.field_illumination import FieldIlluminationAnalysis
@@ -89,7 +89,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session")
-def microscopemetrics_finished_analysis():
+def mm_finished_analysis():
     image_url = "https://dev.mri.cnrs.fr/attachments/download/2926/chroma.npy"
     data = np.ones((1, 1, 512, 512, 3))
     analysis = FieldIlluminationAnalysis(
@@ -110,7 +110,193 @@ def microscopemetrics_finished_analysis():
     return analysis
 
 
-# we can change this later
+@pytest.fixture(scope="session")
+def mm_image_as_numpy_fixture(numpy_image_fixture):
+    image_as_numpy = mm_schema.ImageAsNumpy(
+        name="test_image",
+        description="test image",
+        image_url="https://example.com/image001",
+        data=numpy_image_fixture,
+    )
+
+    return image_as_numpy
+
+
+@pytest.fixture(scope="session")
+def mm_image2d_fixture(numpy_image_fixture):
+    image_2d = numpy_to_inlined_image(
+        array=numpy_image_fixture[0, 0, :, :, 0],
+        name="test_image",
+        description="test image",
+        image_url="https://example.com/image001",
+        source_image_url="https://example.com/source_image001",
+    )
+
+    return image_2d
+
+
+@pytest.fixture(scope="session")
+def mm_image5d_fixture(numpy_image_fixture):
+    image_5d = numpy_to_inlined_image(
+        array=numpy_image_fixture,
+        name="test_image",
+        description="test image",
+        image_url="https://example.com/image001",
+        source_image_url="https://example.com/source_image001",
+    )
+
+    return image_5d
+
+
+@pytest.fixture(scope="session")
+def mm_image_mask_fixture():
+    mask = np.zeros((100, 100), dtype=bool)
+    mask[20:80, 20:80] = True
+
+    image_mask = numpy_to_inlined_mask(
+        array=mask,
+        name="test_mask",
+        description="test mask",
+        image_url="https://example.com/image001",
+        source_image_url="https://example.com/source_image001",
+    )
+
+    return image_mask
+
+
+@pytest.fixture(scope="session")
+def mm_roi_fixture(mm_image_mask_fixture):
+    shapes = [
+        mm_schema.Point(
+            label="point",
+            x=10,
+            y=10,
+            z=0,
+            t=0,
+            c=0,
+            fill_color=mm_schema.Color(r=255, g=0, b=0, alpha=128),
+            stroke_color=mm_schema.Color(r=255, g=0, b=0, alpha=0),
+        ),
+        mm_schema.Line(
+            label="line",
+            x1=20,
+            y1=20,
+            x2=100,
+            y2=100,
+            z=0,
+            t=0,
+            c=0,
+            fill_color=mm_schema.Color(r=0, g=255, b=0, alpha=128),
+            stroke_color=mm_schema.Color(r=0, g=255, b=0, alpha=0),
+            stroke_width=1,
+        ),
+        mm_schema.Rectangle(
+            label="rectangle",
+            x=50,
+            y=50,
+            w=100,
+            h=100,
+            z=0,
+            t=0,
+            c=0,
+            fill_color=mm_schema.Color(r=0, g=0, b=255, alpha=128),
+            stroke_color=mm_schema.Color(r=0, g=0, b=255, alpha=0),
+            stroke_width=3,
+        ),
+        mm_schema.Ellipse(
+            label="ellipse",
+            x=100,
+            y=100,
+            x_rad=50,
+            y_rad=50,
+            z=0,
+            t=0,
+            c=0,
+            fill_color=mm_schema.Color(r=128, g=128, b=0, alpha=128),
+            stroke_color=mm_schema.Color(r=128, g=128, b=0, alpha=0),
+            stroke_width=6,
+        ),
+        mm_schema.Polygon(
+            label="polygon",
+            vertexes=[
+                mm_schema.Vertex(x=10, y=10),
+                mm_schema.Vertex(x=20, y=20),
+                mm_schema.Vertex(x=30, y=10),
+                mm_schema.Vertex(x=20, y=5),
+            ],
+            is_open=False,
+            z=0,
+            t=0,
+            c=0,
+            fill_color=mm_schema.Color(r=0, g=128, b=128, alpha=128),
+            stroke_color=mm_schema.Color(r=0, g=128, b=128, alpha=0),
+            stroke_width=4,
+        ),
+        mm_schema.Mask(
+            label="mask",
+            mask=mm_image_mask_fixture,
+            x=135,
+            y=50,
+            z=0,
+            t=0,
+            c=0,
+        )
+    ]
+
+    roi = mm_schema.ROI(
+        label="test_roi",
+        image=["https://example.com/image001"],
+        shapes=shapes,
+        description="test roi",
+    )
+
+    return roi
+
+
+@pytest.fixture(scope="session")
+def mm_tag_fixture():
+    tag = mm_schema.Tag(
+        id=64,
+        text="a test tag",
+        description="test tag description",
+    )
+
+    return tag
+
+
+@pytest.fixture(scope="session")
+def mm_key_values_fixture():
+    key_values = mm_schema.KeyValues(
+        key_1=64,
+        key_2="a test key",
+        key_3=[1.0, 2.2, 3.3],
+    )
+
+    return key_values
+
+
+@pytest.fixture(scope="session")
+def mm_table_as_pandas_df_fixture(pandas_df_fixture):
+    table = mm_schema.TableAsPandasDF(
+        df=pandas_df_fixture,
+        name="test_table",
+        description="test table description",
+    )
+
+    return table
+
+
+@pytest.fixture(scope="session")
+def mm_table_as_dict_fixture(dict_table_fixture):
+    table = dict_to_inlined_table(
+        dictionary=dict_table_fixture,
+        name="test_table",
+        description="test table description",
+    )
+
+    return table
+
+
 @pytest.fixture(scope="session")
 def omero_params(request):
     user = request.config.getoption("--omero-user")
@@ -233,7 +419,7 @@ def users_groups(conn, omero_params):
 
 
 @pytest.fixture(scope="session")
-def project_structure(conn, timestamp, image_fixture, users_groups, omero_params):
+def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_params):
     group_info, user_info = users_groups
     # Don't change anything for default_user!
     # If you change anything about users/groups, make sure they exist
@@ -337,7 +523,7 @@ def project_structure(conn, timestamp, image_fixture, users_groups, omero_params
 
                     for imname in dataset["images"]:
                         im_id = ezomero.post_image(
-                            current_conn, image_fixture, imname, dataset_id=ds_id, dim_order="zctyx"
+                            current_conn, numpy_image_fixture, imname, dataset_id=ds_id, dim_order="tzyxc"
                         )
                         image_info.append([imname, im_id])
             for dataset in group["datasets"]:
@@ -371,12 +557,38 @@ def conn(omero_params):
 
 
 @pytest.fixture(scope="session")
-def image_fixture():  # format zctxy TODO: change to this format across teh board
-    test_image = np.zeros((20, 3, 1, 200, 201), dtype=np.uint8)
-    test_image[0:10, 0, :, 0:100, 0:100] = 255
-    test_image[11:20, 1, :, 0:100, 0:100] = 255
-    test_image[:, 2, :, 101:200, 101:201] = 255
+def numpy_image_fixture():  # format tzyxc TODO: change to this format across the board
+    test_image = np.zeros((1, 20, 200, 250, 3), dtype=np.uint8)
+    test_image[:, 0:10, 0:100, 0:100, 0] = 255
+    test_image[:, 11:20, 0:100, 0:100, 1] = 255
+    test_image[:, :, 101:200, 125:250, 2] = 255
+
     return test_image
+
+
+@pytest.fixture(scope="session")
+def dict_table_fixture():
+    table = {
+        "str_data": ["string_01", "string_02"],
+        "int_data": [1, 2],
+        "float_data": [1.0, 2.0],
+        "array_float_data": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
+        "project_id": [1, 2],
+        "dataset_id": [1, 2],
+        "image_id": [1, 2],
+        "roi_id": [1, 2],
+    }
+
+    return table
+
+
+@pytest.fixture(scope="session")
+def pandas_df_fixture(dict_table_fixture):
+    df = pd.DataFrame.from_records(
+        [dict(zip(dict_table_fixture, r)) for r in zip(*dict_table_fixture.values())]
+    )
+
+    return df
 
 
 @pytest.fixture(scope="session")
