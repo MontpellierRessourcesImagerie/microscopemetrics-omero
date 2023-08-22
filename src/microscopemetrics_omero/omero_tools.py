@@ -597,7 +597,7 @@ def create_tag(conn: BlitzGateway, tag: mm_schema.Tag, omero_object):
 
     _link_annotation(omero_object, tag_ann)
 
-    tag.id = tag_ann.getId()
+    return tag_ann
 
 def _serialize_map_value(value):
     if isinstance(value, str):
@@ -749,6 +749,8 @@ def create_table(
 
     _link_annotation(omero_object, file_ann)
 
+    return file_ann
+
 
 def create_comment(conn: BlitzGateway,
                    comment_value: str,
@@ -764,6 +766,8 @@ def create_comment(conn: BlitzGateway,
     comment_ann.save()
 
     _link_annotation(omero_object, comment_ann)
+
+    return comment_ann
 
 
 def _link_annotation(object_wrapper: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],

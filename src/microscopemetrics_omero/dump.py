@@ -24,7 +24,7 @@ SHAPE_TO_FUNCTION = {
 
 def dump_output_image(conn: BlitzGateway,
                       output_image: mm_schema.Image,
-                      source_image,
+                      target_dataset: DatasetWrapper,
                       ):
     if isinstance(output_image, mm_schema.Image5D):
         # TZYXC -> zctyx
@@ -37,20 +37,38 @@ def dump_output_image(conn: BlitzGateway,
                 int(output_image.c.values[0])
             )
         ).transpose((1, 4, 0, 2, 3))
+    elif isinstance(output_image, mm_schema.Image2D):
+        image_data = np.array(output_image.data).reshape(
+            (
+                1,
+                1,
+                int(output_image.y.values[0]),
+                int(output_image.x.values[0]),
+                1
+            )
+        )
+    elif isinstance(output_image, mm_schema.ImageAsNumpy):
+        image_data = output_image.data
     else:
-        return
+        module_logger.error(f"Unsupported image type for {output_image.name}: {output_image.class_name}")
+        return None
+    try:
+        source_image_id = omero_tools.get_object_from_url(output_image.source_image_url)[0][1]
+    except IndexError:
+        module_logger.info(f"No source image id provided for {output_image.name}")
+        source_image_id = None
     # TODO: add channel labels to the output image
-    omero_tools.create_image_from_numpy_array(conn=conn,
-                                              data=image_data,
-                                              image_name=output_image.name,
-                                              image_description=f"{output_image.description}.\n" f"Source image:{source_image.getId()}",
-                                              channel_labels=None,
-                                              dataset=source_image.getParent(),
-                                              # source_image_id=source_image.getId(),
-                                              source_image_id=None,
-                                              channels_list=None,
-                                              force_whole_planes=False
-                                              )
+    return omero_tools.create_image_from_numpy_array(conn=conn,
+                                                      data=image_data,
+                                                      image_name=output_image.name,
+                                                      image_description=f"{output_image.description}.\n" 
+                                                                        f"Source image:{omero_tools.get_object_from_url(output_image.source_image_url}",
+                                                      channel_labels=None,
+                                                      dataset=target_dataset,
+                                                      source_image_id=source_image_id,
+                                                      channels_list=None,
+                                                      force_whole_planes=False
+                                                      )
 
     # TODO: We should consider that we might want to add metadata to an output image
 
@@ -60,7 +78,8 @@ def dump_output_roi(conn: BlitzGateway,
                     image: ImageWrapper,
                     ):
     shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in output_roi.shapes]
-    omero_tools.create_roi(
+
+    return omero_tools.create_roi(
         conn=conn,
         image=image,
         shapes=shapes,
@@ -73,9 +92,10 @@ def dump_output_tag(conn: BlitzGateway,
                     output_tag: mm_schema.Tag,
                     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                     ):
-    omero_tools.create_tag(
+    # TODO: if tag has an id, we should use that id
+    return omero_tools.create_tag(
         conn=conn,
-        tag=output_tag.tag_value,
+        tag=output_tag.text,
         omero_object=omero_object,
     )
 
@@ -84,7 +104,7 @@ def dump_output_key_value(conn: BlitzGateway,
                           output_key_values: mm_schema.KeyValues,
                           omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                           ):
-    omero_tools.create_key_value(
+    return omero_tools.create_key_value(
         conn=conn,
         annotation=output_key_values.key_values,
         omero_object=omero_object,
@@ -98,7 +118,7 @@ def dump_output_table(conn: BlitzGateway,
                       output_table: mm_schema.Table,
                       omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                       ):
-    omero_tools.create_table(
+    return omero_tools.create_table(
         conn=conn,
         table=output_table.table,
         table_name=output_table.name,
@@ -112,7 +132,7 @@ def dump_comment(conn: BlitzGateway,
                  output_comment: mm_schema.Comment,
                  omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                  ):
-    omero_tools.create_comment(
+    return omero_tools.create_comment(
         conn=conn,
         comment_value=output_comment.comment,
         omero_object=omero_object,
