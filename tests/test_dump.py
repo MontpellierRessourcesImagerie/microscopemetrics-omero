@@ -103,7 +103,7 @@ def test_dump_key_value(conn, mm_key_values_fixture, project_structure):
     assert type(project_kv_obj.getId()) == int
 
 
-def test_dump_table(conn, mm_table_as_dict_fixture, project_structure):
+def test_dump_table_as_dict(conn, mm_table_as_dict_fixture, project_structure):
     image_info = project_structure[2]
     im_id = image_info[0][1]
     image = conn.getObject("Image", im_id)
@@ -118,6 +118,34 @@ def test_dump_table(conn, mm_table_as_dict_fixture, project_structure):
                                         omero_object=dataset)
     project_table_obj = dump.dump_table(conn=conn,
                                         table=mm_table_as_dict_fixture,
+                                        omero_object=project)
+
+    assert image_table_obj is not None
+    assert type(image_table_obj) == FileAnnotationWrapper
+    assert type(image_table_obj.getId()) == int
+    assert dataset_table_obj is not None
+    assert type(dataset_table_obj) == FileAnnotationWrapper
+    assert type(dataset_table_obj.getId()) == int
+    assert project_table_obj is not None
+    assert type(project_table_obj) == FileAnnotationWrapper
+    assert type(project_table_obj.getId()) == int
+
+
+def test_dump_table_as_pandas_df(conn, mm_table_as_pandas_df_fixture, project_structure):
+    image_info = project_structure[2]
+    im_id = image_info[0][1]
+    image = conn.getObject("Image", im_id)
+    dataset = image.getParent()
+    project = dataset.getParent()
+
+    image_table_obj = dump.dump_table(conn=conn,
+                                      table=mm_table_as_pandas_df_fixture,
+                                      omero_object=image)
+    dataset_table_obj = dump.dump_table(conn=conn,
+                                        table=mm_table_as_pandas_df_fixture,
+                                        omero_object=dataset)
+    project_table_obj = dump.dump_table(conn=conn,
+                                        table=mm_table_as_pandas_df_fixture,
                                         omero_object=project)
 
     assert image_table_obj is not None
