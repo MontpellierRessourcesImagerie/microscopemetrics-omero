@@ -33,7 +33,7 @@ DEFAULT_OMERO_SECURE = 1
 
 # [[group, permissions], ...]
 GROUPS_TO_CREATE = [
-    ["microscope_1_group", "read-only"],
+    ["microscope_1_group", "read-annotate"],
     ["microscope_2_group", "read-only"],
     ["regular_user_group", "read-only"],
 ]
@@ -88,7 +88,7 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_finished_analysis():
     image_url = "https://dev.mri.cnrs.fr/attachments/download/2926/chroma.npy"
     data = np.ones((1, 1, 512, 512, 3))
@@ -110,7 +110,7 @@ def mm_finished_analysis():
     return analysis
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_image_as_numpy_fixture(numpy_image_fixture):
     image_as_numpy = mm_schema.ImageAsNumpy(
         name="test_image",
@@ -122,7 +122,7 @@ def mm_image_as_numpy_fixture(numpy_image_fixture):
     return image_as_numpy
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_image2d_fixture(numpy_image_fixture):
     image_2d = numpy_to_inlined_image(
         array=numpy_image_fixture[0, 0, :, :, 0],
@@ -135,7 +135,7 @@ def mm_image2d_fixture(numpy_image_fixture):
     return image_2d
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_image5d_fixture(numpy_image_fixture):
     image_5d = numpy_to_inlined_image(
         array=numpy_image_fixture,
@@ -148,7 +148,7 @@ def mm_image5d_fixture(numpy_image_fixture):
     return image_5d
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_image_mask_fixture():
     mask = np.zeros((100, 100), dtype=bool)
     mask[20:80, 20:80] = True
@@ -164,7 +164,7 @@ def mm_image_mask_fixture():
     return image_mask
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_roi_fixture(mm_image_mask_fixture):
     shapes = [
         mm_schema.Point(
@@ -253,7 +253,7 @@ def mm_roi_fixture(mm_image_mask_fixture):
     return roi
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_tag_fixture():
     tag = mm_schema.Tag(
         id=64,
@@ -264,7 +264,7 @@ def mm_tag_fixture():
     return tag
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_key_values_fixture():
     key_values = mm_schema.KeyValues(
         key_1=64,
@@ -275,7 +275,16 @@ def mm_key_values_fixture():
     return key_values
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
+def mm_comment_fixture():
+    comment = mm_schema.Comment(
+        text="a test comment",
+    )
+
+    return comment
+
+
+@pytest.fixture
 def mm_table_as_pandas_df_fixture(pandas_df_fixture):
     table = mm_schema.TableAsPandasDF(
         df=pandas_df_fixture,
@@ -286,7 +295,7 @@ def mm_table_as_pandas_df_fixture(pandas_df_fixture):
     return table
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def mm_table_as_dict_fixture(dict_table_fixture):
     table = dict_to_inlined_table(
         dictionary=dict_table_fixture,
@@ -566,14 +575,14 @@ def numpy_image_fixture():  # format tzyxc TODO: change to this format across th
     return test_image
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def dict_table_fixture():
     table = {
         "str_data": ["string_01", "string_02"],
         "int_data": [1, 2],
         "float_data": [1.0, 2.0],
-        "array_float_data": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
-        "project_id": [1, 2],
+        # "array_float_data": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  # unsupported
+        # "project_id": [1, 2],  # the projects column does not exist
         "dataset_id": [1, 2],
         "image_id": [1, 2],
         "roi_id": [1, 2],
@@ -582,7 +591,7 @@ def dict_table_fixture():
     return table
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def pandas_df_fixture(dict_table_fixture):
     df = pd.DataFrame.from_records(
         [dict(zip(dict_table_fixture, r)) for r in zip(*dict_table_fixture.values())]

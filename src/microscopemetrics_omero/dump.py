@@ -2,6 +2,7 @@ import logging
 
 from typing import Union
 import numpy as np
+import ast
 
 from dataclasses import fields
 
@@ -22,48 +23,48 @@ SHAPE_TO_FUNCTION = {
 }
 
 
-def dump_output_image(conn: BlitzGateway,
-                      output_image: mm_schema.Image,
-                      target_dataset: DatasetWrapper,
-                      ):
-    if isinstance(output_image, mm_schema.Image5D):
+def dump_image(conn: BlitzGateway,
+               image: mm_schema.Image,
+               target_dataset: DatasetWrapper,
+               ):
+    if isinstance(image, mm_schema.Image5D):
         # TZYXC -> zctyx
-        image_data = np.array(output_image.data).reshape(
+        image_data = np.array(image.data).reshape(
             (
-                int(output_image.t.values[0]),
-                int(output_image.z.values[0]),
-                int(output_image.y.values[0]),
-                int(output_image.x.values[0]),
-                int(output_image.c.values[0])
+                int(image.t.values[0]),
+                int(image.z.values[0]),
+                int(image.y.values[0]),
+                int(image.x.values[0]),
+                int(image.c.values[0])
             )
         ).transpose((1, 4, 0, 2, 3))
-    elif isinstance(output_image, mm_schema.Image2D):
-        image_data = np.array(output_image.data).reshape(
+    elif isinstance(image, mm_schema.Image2D):
+        image_data = np.array(image.data).reshape(
             (
                 1,
                 1,
-                int(output_image.y.values[0]),
-                int(output_image.x.values[0]),
+                int(image.y.values[0]),
+                int(image.x.values[0]),
                 1
             )
         )
-    elif isinstance(output_image, mm_schema.ImageAsNumpy):
-        image_data = output_image.data
+    elif isinstance(image, mm_schema.ImageAsNumpy):
+        image_data = image.data
     else:
-        module_logger.error(f"Unsupported image type for {output_image.name}: {output_image.class_name}")
+        module_logger.error(f"Unsupported image type for {image.name}: {image.class_name}")
         return None
     source_image_id = None
     try:
-        source_image_id = omero_tools.get_object_from_url(output_image.source_image_url[0])[1]
+        source_image_id = omero_tools.get_object_from_url(image.source_image_url[0])[1]
     except IndexError:
-        module_logger.info(f"No source image id provided for {output_image.name}")
+        module_logger.info(f"No source image id provided for {image.name}")
     except ValueError:
-        module_logger.info(f"Invalid source image url provided for {output_image.name}")
+        module_logger.info(f"Invalid source image url provided for {image.name}")
     # TODO: add channel labels to the output image
     return omero_tools.create_image_from_numpy_array(conn=conn,
                                                      data=image_data,
-                                                     image_name=output_image.name,
-                                                     image_description=f"{output_image.description}.\nSource image:{source_image_id}",
+                                                     image_name=image.name,
+                                                     image_description=f"{image.description}.\nSource image:{source_image_id}",
                                                      channel_labels=None,
                                                      dataset=target_dataset,
                                                      source_image_id=source_image_id,
@@ -74,69 +75,99 @@ def dump_output_image(conn: BlitzGateway,
     # TODO: We should consider that we might want to add metadata to an output image
 
 
-def dump_output_roi(conn: BlitzGateway,
-                    output_roi: mm_schema.ROI,
-                    image: ImageWrapper,
-                    ):
-    shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in output_roi.shapes]
+def dump_roi(conn: BlitzGateway,
+             roi: mm_schema.ROI,
+             image: ImageWrapper,
+             ):
+    shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in roi.shapes]
 
     return omero_tools.create_roi(
         conn=conn,
         image=image,
         shapes=shapes,
-        name=output_roi.label,
-        description=output_roi.description,
+        name=roi.label,
+        description=roi.description,
     )
 
 
-def dump_output_tag(conn: BlitzGateway,
-                    output_tag: mm_schema.Tag,
-                    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-                    ):
+def dump_tag(conn: BlitzGateway,
+             tag: mm_schema.Tag,
+             omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+             ):
     # TODO: if tag has an id, we should use that id
     return omero_tools.create_tag(
         conn=conn,
-        tag=output_tag.text,
+        tag_text=tag.text,
+        tag_description=tag.description,
         omero_object=omero_object,
     )
 
 
-def dump_output_key_value(conn: BlitzGateway,
-                          output_key_values: mm_schema.KeyValues,
-                          omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-                          ):
+def dump_key_value(conn: BlitzGateway,
+                   key_values: mm_schema.KeyValues,
+                   omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+                   ):
     return omero_tools.create_key_value(
         conn=conn,
-        annotation=output_key_values.key_values,
+        annotation=key_values._as_dict,
         omero_object=omero_object,
-        annotation_name=output_key_values.name,
-        annotation_description=output_key_values.description,
-        namespace=output_key_values.class_model_uri,
+        annotation_name=key_values.class_name,
+        annotation_description=key_values.class_class_uri,
+        namespace=key_values.class_model_uri,
     )
 
+def _eval(s):
+    try:
+        ev = ast.literal_eval(s)
+        return ev
+    except ValueError:
+        corrected = "\'" + s + "\'"
+        ev = ast.literal_eval(corrected)
+        return ev
 
-def dump_output_table(conn: BlitzGateway,
-                      output_table: mm_schema.Table,
-                      omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-                      ):
-    return omero_tools.create_table(
-        conn=conn,
-        table=output_table.table,
-        table_name=output_table.name,
-        omero_object=omero_object,
-        table_description=output_table.description,
-        namespace=output_table.class_model_uri,
-    )
+def _eval_types(table: mm_schema.TableAsDict):
+    for column in table.columns.values():
+        breakpoint()
+        column.values = [_eval(v) for v in column.values]
+    return table
 
+
+def dump_table(conn: BlitzGateway,
+               table: mm_schema.Table,
+               omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+               ):
+    if isinstance(table, mm_schema.TableAsDict):
+        # linkML if casting everything as a string and we have to evaluate it back
+        columns = {c.name: [_eval(v) for v in c.values] for c in table.columns.values()}
+        return omero_tools.create_table(
+            conn=conn,
+            table=columns,
+            table_name=table.name,
+            omero_object=omero_object,
+            table_description=table.description,
+            namespace=table.class_model_uri,
+        )
+    elif isinstance(table, mm_schema.TableAsPandasDF):
+        return omero_tools.create_table(
+            conn=conn,
+            table=table.df,
+            table_name=table.name,
+            omero_object=omero_object,
+            table_description=table.description,
+            namespace=table.class_model_uri,
+        )
+    else:
+        module_logger.error(f"Unsupported table type for {table.name}: {table.class_name}")
+        return None
 
 def dump_comment(conn: BlitzGateway,
-                 output_comment: mm_schema.Comment,
+                 comment: mm_schema.Comment,
                  omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                  ):
     return omero_tools.create_comment(
         conn=conn,
-        comment_value=output_comment.comment,
+        comment_text=comment.text,
         omero_object=omero_object,
-        namespace=output_comment.class_model_uri,
+        namespace=comment.class_model_uri,
     )
 

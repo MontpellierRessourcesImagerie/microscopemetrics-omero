@@ -143,30 +143,30 @@ def dump_output_element(
     if isinstance(output_element, list):
         [dump_output_element(conn, e, target_omero_object) for e in output_element]
     elif isinstance(output_element, mm_schema.Image):
-        dump.dump_output_image(conn, output_element, target_omero_object)
+        dump.dump_image(conn, output_element, target_omero_object)
     elif isinstance(output_element, mm_schema.ROI):
-        dump.dump_output_roi(conn, output_element, target_omero_object)
+        dump.dump_roi(conn, output_element, target_omero_object)
     elif isinstance(output_element, mm_schema.Tag):
-        dump.dump_output_tag(conn, output_element, target_omero_object)
+        dump.dump_tag(conn, output_element, target_omero_object)
     elif isinstance(output_element, mm_schema.KeyValues):
-        dump.dump_output_key_value(conn, output_element, target_omero_object)
+        dump.dump_key_value(conn, output_element, target_omero_object)
     elif isinstance(output_element, mm_schema.Table):
-        dump.dump_output_table(conn, output_element, target_omero_object)
+        dump.dump_table(conn, output_element, target_omero_object)
 
     # TODO: make this a match statement
     # match output_element:
     #     case list():
     #         [dump_output_element(conn, e, target_omero_object, namespace) for e in output_element]
     #     case mm_schema.Image():
-    #         dump.dump_output_image(conn, output_element, target_omero_object)
+    #         dump.dump_image(conn, output_element, target_omero_object)
     #     case mm_schema.ROI():
-    #         dump.dump_output_roi(conn, output_element, target_omero_object)
+    #         dump.dump_roi(conn, output_element, target_omero_object)
     #     case mm_schema.Tag():
-    #         dump.dump_output_tag(conn, output_element, target_omero_object)
+    #         dump.dump_tag(conn, output_element, target_omero_object)
     #     case mm_schema.KeyValues():
-    #         dump.dump_output_key_value(conn, output_element, target_omero_object)
+    #         dump.dump_key_value(conn, output_element, target_omero_object)
     #     case mm_schema.Table():
-    #         dump.dump_output_table(conn, output_element, target_omero_object)
+    #         dump.dump_table(conn, output_element, target_omero_object)
     #     case mm_schema.Comment():
     #         dump.dump_comment(conn, output_element, target_omero_object)
     #

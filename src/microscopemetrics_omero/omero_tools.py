@@ -5,6 +5,7 @@ from string import ascii_letters
 from typing import Union, Tuple, List
 
 import numpy as np
+import pandas as pd
 from omero import grid
 from omero.constants import metadata
 from omero.gateway import (
@@ -437,10 +438,10 @@ def create_roi(conn, image, shapes, name, description):
         roi.setDescription(rstring(description))
     for shape in shapes:
         roi.addShape(shape)
-    # Save the ROI (saves any linked shapes too)
-    return conn.getUpdateService().saveAndReturnObject(roi)
 
+    return RoiWrapper(conn, conn.getUpdateService().saveAndReturnObject(roi))
 
+# TODO: move references to model out of here
 def _rgba_to_int(rgba_color: mm_schema.Color):
     """Return the color as an Integer in RGBA encoding"""
     r = rgba_color.r << 24
@@ -582,10 +583,10 @@ def create_shape_mask(mm_mask: mm_schema.Mask):
     return mask
 
 
-def create_tag(conn: BlitzGateway, tag: mm_schema.Tag, omero_object):
+def create_tag(conn: BlitzGateway, tag_text: str, tag_description: str, omero_object):
     tag_ann = TagAnnotationWrapper(conn)
-    tag_ann.setValue(tag.text)
-    tag_ann.setDescription(tag.description)
+    tag_ann.setValue(tag_text)
+    tag_ann.setDescription(tag_description)
     tag_ann.save()
 
     _link_annotation(omero_object, tag_ann)
@@ -597,7 +598,7 @@ def _serialize_map_value(value):
         return value
     try:
         return json.dumps(value)
-    except ValueError as e:
+    except ValueError:
         # TODO: log an error
         return json.dumps(value.__str__())
 
@@ -648,10 +649,19 @@ def _create_column(data_type, kwargs):
     return column_class(**kwargs)
 
 
-def _create_columns(table):
+def _create_columns(table: Union[DataFrame, list[dict[str, list]], dict[str, list]]) -> list[grid.Column]:
     # TODO: Verify implementation of empty table creation
-    column_names = table.columns.tolist()
-    values = [table[c].values.tolist() for c in table.columns]
+    if isinstance(table, pd.DataFrame):
+        column_names = table.columns.tolist()
+        values = [table[c].values.tolist() for c in table.columns]
+    elif isinstance(table, list):
+        column_names = [next(iter(c)) for c in table]
+        values = [table[cn] for cn in column_names]
+    elif isinstance(table, dict):
+        column_names = list(table.keys())
+        values = [table[cn] for cn in column_names]
+    else:
+        raise TypeError("Table must be a pandas dataframe or a list of dictionaries")
 
     columns = []
     for cn, v in zip(column_names, values):
@@ -709,18 +719,17 @@ def _create_columns(table):
 
 def create_table(
     conn: BlitzGateway,
-    table: DataFrame,
+    table: Union[DataFrame, list[dict[str, list]], dict[str, list]],
     table_name: str,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
     table_description: str,
     namespace: str,
 ):
-    """Creates a table annotation from a pandas dataframe"""
+    """Creates a table annotation from a pandas dataframe or a list of columns as dictionaries."""
 
     table_name = (
         f'{table_name}_{"".join([choice(ascii_letters) for _ in range(32)])}.h5'
     )
-
     columns = _create_columns(table)
 
     resources = conn.c.sf.sharedResources()
@@ -746,7 +755,7 @@ def create_table(
 
 
 def create_comment(conn: BlitzGateway,
-                   comment_value: str,
+                   comment_text: str,
                    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                    namespace: str):
     if namespace is None:
@@ -754,7 +763,7 @@ def create_comment(conn: BlitzGateway,
             metadata.NSCLIENTMAPANNOTATION
         )  # This makes the annotation editable in the client
     comment_ann = CommentAnnotationWrapper(conn)
-    comment_ann.setValue(comment_value)
+    comment_ann.setValue(comment_text)
     comment_ann.setNs(namespace)
     comment_ann.save()
 
