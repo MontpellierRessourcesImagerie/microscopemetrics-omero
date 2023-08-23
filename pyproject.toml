@@ -41,7 +41,7 @@ filterwarnings = [
 
 [tool.poetry.dependencies]
 python = ">=3.8 <=3.11"
-microscopemetrics = { git = "https://github.com/juliomateoslangerak/microscope-metrics.git", branch = "testing_linkML" }
+microscopemetrics = { git = "https://github.com/juliomateoslangerak/microscope-metrics.git" }
 omero-py = "^5.13.0"
 pyyaml = "^6.0"
 
