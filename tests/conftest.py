@@ -112,19 +112,17 @@ def mm_finished_analysis():
 
 @pytest.fixture
 def mm_image_as_numpy_fixture(numpy_image_fixture):
-    image_as_numpy = mm_schema.ImageAsNumpy(
+    return mm_schema.ImageAsNumpy(
         name="test_image",
         description="test image",
         image_url="https://example.com/image001",
         data=numpy_image_fixture,
     )
 
-    return image_as_numpy
-
 
 @pytest.fixture
 def mm_image2d_fixture(numpy_image_fixture):
-    image_2d = numpy_to_inlined_image(
+    return numpy_to_inlined_image(
         array=numpy_image_fixture[0, 0, :, :, 0],
         name="test_image",
         description="test image",
@@ -132,12 +130,10 @@ def mm_image2d_fixture(numpy_image_fixture):
         source_image_url="https://example.com/source_image001",
     )
 
-    return image_2d
-
 
 @pytest.fixture
 def mm_image5d_fixture(numpy_image_fixture):
-    image_5d = numpy_to_inlined_image(
+    return numpy_to_inlined_image(
         array=numpy_image_fixture,
         name="test_image",
         description="test image",
@@ -145,23 +141,19 @@ def mm_image5d_fixture(numpy_image_fixture):
         source_image_url="https://example.com/source_image001",
     )
 
-    return image_5d
-
 
 @pytest.fixture
 def mm_image_mask_fixture():
     mask = np.zeros((100, 100), dtype=bool)
     mask[20:80, 20:80] = True
 
-    image_mask = numpy_to_inlined_mask(
+    return numpy_to_inlined_mask(
         array=mask,
         name="test_mask",
         description="test mask",
         image_url="https://example.com/image001",
         source_image_url="https://example.com/source_image001",
     )
-
-    return image_mask
 
 
 @pytest.fixture
@@ -243,67 +235,55 @@ def mm_roi_fixture(mm_image_mask_fixture):
         )
     ]
 
-    roi = mm_schema.ROI(
+    return mm_schema.ROI(
         label="test_roi",
         image=["https://example.com/image001"],
         shapes=shapes,
         description="test roi",
     )
 
-    return roi
-
 
 @pytest.fixture
 def mm_tag_fixture():
-    tag = mm_schema.Tag(
+    return mm_schema.Tag(
         id=64,
         text="a test tag",
         description="test tag description",
     )
 
-    return tag
-
 
 @pytest.fixture
 def mm_key_values_fixture():
-    key_values = mm_schema.KeyValues(
+    return mm_schema.KeyValues(
         key_1=64,
         key_2="a test key",
         key_3=[1.0, 2.2, 3.3],
     )
 
-    return key_values
-
 
 @pytest.fixture
 def mm_comment_fixture():
-    comment = mm_schema.Comment(
+    return mm_schema.Comment(
         text="a test comment",
     )
-
-    return comment
 
 
 @pytest.fixture
 def mm_table_as_pandas_df_fixture(pandas_df_fixture):
-    table = mm_schema.TableAsPandasDF(
+    return mm_schema.TableAsPandasDF(
         df=pandas_df_fixture,
         name="test_table",
         description="test table description",
     )
 
-    return table
-
 
 @pytest.fixture
 def mm_table_as_dict_fixture(dict_table_fixture):
-    table = dict_to_inlined_table(
+    return dict_to_inlined_table(
         dictionary=dict_table_fixture,
         name="test_table",
         description="test table description",
     )
-
-    return table
 
 
 @pytest.fixture(scope="session")
@@ -577,7 +557,7 @@ def numpy_image_fixture():  # format tzyxc TODO: change to this format across th
 
 @pytest.fixture
 def dict_table_fixture():
-    table = {
+    return {
         "str_data": ["string_01", "string_02"],
         "int_data": [1, 2],
         "float_data": [1.0, 2.0],
@@ -588,16 +568,15 @@ def dict_table_fixture():
         "roi_id": [1, 2],
     }
 
-    return table
-
 
 @pytest.fixture
 def pandas_df_fixture(dict_table_fixture):
-    df = pd.DataFrame.from_records(
-        [dict(zip(dict_table_fixture, r)) for r in zip(*dict_table_fixture.values())]
+    return pd.DataFrame.from_records(
+        [
+            dict(zip(dict_table_fixture, r))
+            for r in zip(*dict_table_fixture.values())
+        ]
     )
-
-    return df
 
 
 @pytest.fixture(scope="session")
