@@ -1,2 +1,0 @@
-git+https://github.com/MontpellierRessourcesImagerie/microscope-metrics.git
-git+https://github.com/juliomateoslangerak/microscopemetrics-omero.git

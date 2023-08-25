@@ -3,7 +3,7 @@ LABEL authors="Julio Mateos Langerak"
 
 
 RUN mkdir $OMERODIR/lib/scripts/omero/microscope_metrics
-COPY src/omero_scripts/* $OMERODIR/lib/scripts/omero/microscope_metrics/
+COPY microscope-metrics/* $OMERODIR/lib/scripts/omero/microscope_metrics/
 USER root
 RUN chmod -R 755 $OMERODIR/lib/scripts/omero/microscope_metrics/
 RUN /opt/omero/server/venv3/bin/pip install -U  \
