@@ -147,11 +147,11 @@ def _get_pixel_size_units(image: ImageWrapper):
 
 def get_image_intensities(
         image: ImageWrapper,
-        z_range=None,
-        c_range: range = None,
-        t_range: range = None,
-        y_range: range = None,
-        x_range: range = None
+        z_range: Union[int, tuple, range] = None,
+        c_range: Union[int, tuple, range] = None,
+        t_range: Union[int, tuple, range] = None,
+        y_range: Union[int, tuple, range] = None,
+        x_range: Union[int, tuple, range] = None
 ):
     """Returns a numpy array containing the intensity values of the image
     Returns an array with dimensions arranged as zctyx
@@ -166,27 +166,28 @@ def get_image_intensities(
     else:
         whole_planes = False
 
-    ranges = list(range(5))
-    for dim, r in enumerate([z_range, c_range, t_range, y_range, x_range]):
-        # Verify that requested ranges are within the available data
-        if r is None:  # Range is not specified
+    ranges = [z_range, c_range, t_range, y_range, x_range]
+    for dim, r in enumerate(ranges):
+        if r is None:
             ranges[dim] = range(image_shape[dim])
-        else:  # Range is specified
-            if type(r) is int:
-                ranges[dim] = range(r, r + 1)
-            elif type(r) is not tuple:
-                raise TypeError("Range is not provided as a tuple.")
-            else:  # range is a tuple
-                if len(r) == 1:
-                    ranges[dim] = range(r[0])
-                elif len(r) == 2:
-                    ranges[dim] = range(r[0], r[1])
-                elif len(r) == 3:
-                    ranges[dim] = range(r[0], r[1], r[2])
-                else:
-                    raise IndexError("Range values must contain 1 to three values")
-            if not 1 <= ranges[dim].stop <= image_shape[dim]:
-                raise IndexError("Specified range is outside of the image dimensions")
+        elif isinstance(r, range):
+            continue
+        elif isinstance(r, int):
+            ranges[dim] = range(r, r + 1)
+        elif isinstance(r, tuple):
+            if len(r) == 1:
+                ranges[dim] = range(r[0])
+            elif len(r) == 2:
+                ranges[dim] = range(r[0], r[1])
+            elif len(r) == 3:
+                ranges[dim] = range(r[0], r[1], r[2])
+            else:
+                raise IndexError("Range values must contain 1 to 3 values")
+        else:
+            raise TypeError("Range is not provided as a tuple.")
+
+        if not 1 <= ranges[dim].stop <= image_shape[dim]:
+            raise IndexError("Specified range is outside of the image dimensions")
 
     output_shape = (
         len(ranges[0]),
