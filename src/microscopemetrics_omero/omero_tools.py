@@ -101,7 +101,7 @@ def get_url_from_object(obj: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]
     return obj._conn.c.host + "/webclient/?show=" + obj.OMERO_TYPE + "-" + str(obj.getId())
 
 
-def _label_channels(image, labels):
+def _label_channels(image:ImageWrapper, labels: List):
     if len(labels) != image.getSizeC():
         raise ValueError('The length of the channel labels is not of the same size as the size of the c dimension')
     for label, channel in zip(labels, image.getChannels(noRE=True)):
@@ -110,7 +110,7 @@ def _label_channels(image, labels):
         logical_channel.save()
 
 
-def _get_image_shape(image):
+def _get_image_shape(image: ImageWrapper):
     try:
         image_shape = (image.getSizeZ(),
                        image.getSizeC(),
@@ -123,7 +123,7 @@ def _get_image_shape(image):
     return image_shape
 
 
-def _get_pixel_size(image, order='ZXY'):
+def _get_pixel_size(image: ImageWrapper, order: str = 'ZXY'):
     pixels = image.getPrimaryPixels()
 
     order = order.upper()
@@ -135,7 +135,7 @@ def _get_pixel_size(image, order='ZXY'):
     return pixel_sizes
 
 
-def _get_pixel_size_units(image):
+def _get_pixel_size_units(image: ImageWrapper):
     pixels = image.getPrimaryPixels()
 
     return (
@@ -319,7 +319,7 @@ def create_image_from_numpy_array(conn: BlitzGateway,
                                   channel_labels: Union[list, tuple] = None,
                                   dataset: DatasetWrapper = None,
                                   source_image_id: int = None,
-                                  channels_list: list[int] = None,
+                                  channels_list: List[int] = None,
                                   force_whole_planes: bool = False):
     """
     Creates a new image in OMERO from a n dimensional numpy array.
@@ -427,7 +427,7 @@ def _get_tile_list(zct_list, data_shape, tile_size):
     return zct_tile_list
 
 
-def create_roi(conn, image, shapes, name, description):
+def create_roi(conn: BlitzGateway, image: ImageWrapper, shapes: List, name, description):
     # create an ROI, link it to Image
     roi = RoiI()  # TODO: work with wrappers
     # use the omero.model.ImageI that underlies the 'image' wrapper
@@ -583,7 +583,10 @@ def create_shape_mask(mm_mask: mm_schema.Mask):
     return mask
 
 
-def create_tag(conn: BlitzGateway, tag_text: str, tag_description: str, omero_object):
+def create_tag(conn: BlitzGateway,
+               tag_text: str,
+               tag_description: str,
+               omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]):
     tag_ann = TagAnnotationWrapper(conn)
     tag_ann.setValue(tag_text)
     tag_ann.setDescription(tag_description)
@@ -649,7 +652,7 @@ def _create_column(data_type, kwargs):
     return column_class(**kwargs)
 
 
-def _create_columns(table: Union[DataFrame, list[dict[str, list]], dict[str, list]]) -> list[grid.Column]:
+def _create_columns(table: Union[DataFrame, List[Dict[str, list]], Dict[str, list]]) -> List[grid.Column]:
     # TODO: Verify implementation of empty table creation
     if isinstance(table, pd.DataFrame):
         column_names = table.columns.tolist()
@@ -719,7 +722,7 @@ def _create_columns(table: Union[DataFrame, list[dict[str, list]], dict[str, lis
 
 def create_table(
     conn: BlitzGateway,
-    table: Union[DataFrame, list[dict[str, list]], dict[str, list]],
+    table: Union[DataFrame, List[Dict[str, list]], Dict[str, list]],
     table_name: str,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
     table_description: str,
