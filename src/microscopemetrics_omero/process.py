@@ -23,12 +23,6 @@ ANALYSIS_CLASS_MAPPINGS = {
     "PSFBeadsAnalysis": field_illumination.FieldIlluminationAnalysis,
 }
 
-INPUT_TYPE_TO_LOAD_FUNCTION = {
-    mm_schema.Image: load.load_image,
-    mm_schema.Dataset: load.load_dataset,
-    mm_schema.Project: load.load_project,
-}
-
 
 def _annotate_processing(omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
                          start_time: datetime.time,
