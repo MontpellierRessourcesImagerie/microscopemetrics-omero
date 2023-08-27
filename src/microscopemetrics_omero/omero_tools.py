@@ -2,7 +2,7 @@ import json
 from itertools import product
 from random import choice
 from string import ascii_letters
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
