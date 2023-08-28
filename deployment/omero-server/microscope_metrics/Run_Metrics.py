@@ -134,6 +134,13 @@ def run_script():
         for dataset in datasets:
             microscope_prj = dataset.getParent()  # We assume one project per dataset
 
+            if microscope_prj is None:
+                logger.error(
+                    f"No parent project found for dataset {dataset.getName()}:"
+                    f"Every dataset must be part of a project and only one project."
+                )
+                continue
+
             assay_conf_file_name = f"{script_params['Assay type']}_config.yaml"
             assay_config = None
             for ann in microscope_prj.listAnnotations():
