@@ -102,7 +102,7 @@ def get_url_from_object(
 ) -> str:
     """Get the URL from an OMERO object"""
     return (
-        obj._conn.c.host + "/webclient/?show=" + obj.OMERO_TYPE + "-" + str(obj.getId())
+        "https://" + obj._conn.host + "/webclient/?show=" + obj.OMERO_TYPE + "-" + str(obj.getId())
     )
 
 
