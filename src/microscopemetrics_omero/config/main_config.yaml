@@ -1,0 +1,70 @@
+metrics_generated_tag_id: 1284
+device_conf_file_name: device_config.yaml
+
+# We specify here where to link the specific outputs from the analysis done by microscope-metrics
+samples:
+  FieldIlluminationDataset:
+    input:
+      field_illumination_image:
+    output:
+      key_values:
+        image:
+          link: true
+        dataset:
+          link: true
+        project:
+          link: true
+          as_table: true
+      intensity_profiles:
+        image:
+          link: true
+      intensity_map:
+        dataset:
+          link: true
+      profile_rois:
+        image:
+          source: field_illumination_image
+          link: true
+
+  ArgolightBDataset:
+    input:
+      argolight_b_image:
+    output:
+      spots_labels_image:
+        image:
+          source: argolight_b_image
+        dataset:
+          link: true
+      spots_centroids:
+        image:
+          link: true
+      intensity_measurements:
+        image:
+          link: true
+      distance_measurements:
+        image:
+          link: true
+      spots_properties:
+        dataset:
+          link: true
+      spots_distances:
+        dataset:
+          link: true
+
+  ArgolightEDataset:
+    input:
+      argolight_e_image:
+    output:
+      peaks_rois:
+        image:
+          source: argolight_e_image
+          link: true
+      key_measurements:
+        image:
+          link: true
+        project:
+          link: true
+          as_table: true
+      intensity_profiles:
+        image:
+          link: true
