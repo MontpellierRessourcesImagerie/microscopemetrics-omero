@@ -10,8 +10,10 @@ samples:
       key_values:
         image:
           link: true
+          as_table: false
         dataset:
           link: true
+          as_table: false
         project:
           link: true
           as_table: true
