@@ -119,7 +119,7 @@ def run_script():
 
         logger.info(f"Metrics started using parameters: \n{script_params}")
 
-        with open("/etc/omero_metrics/main_config.yaml", "r") as f:
+        with open("/etc/microscopemetrics_omero/main_config.yaml", "r") as f:
             main_config = yaml.load(f, Loader=yaml.SafeLoader)
 
         conn = gateway.BlitzGateway(client_obj=client)
