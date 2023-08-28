@@ -1,5 +1,9 @@
+assays:
+  - weekly
+  - monthly
+  - yearly
 metrics_generated_tag_id: 1284
-device_conf_file_name: device_config.yaml
+study_conf_file_name: study_config.yaml
 
 # We specify here where to link the specific outputs from the analysis done by microscope-metrics
 samples:

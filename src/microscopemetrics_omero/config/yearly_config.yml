@@ -15,7 +15,7 @@ study:  # This is the OMERO project
   name: resolution
   description: Follow the resolution of a microscope over time
 
-assays:  # These are the OMERO datasets. One dataset per type of analysis
+analysis:  # These are the OMERO datasets. One dataset per type of analysis
   Argolight_B:
     do_analysis: true
     sample: argolight

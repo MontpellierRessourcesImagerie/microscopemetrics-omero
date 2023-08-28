@@ -4,10 +4,7 @@ from typing import Union
 from dataclasses import fields
 
 from microscopemetrics_omero import omero_tools
-from microscopemetrics.samples import (
-    argolight,
-    field_illumination
-)
+from microscopemetrics.samples import argolight, field_illumination
 from microscopemetrics.data_schema import core_schema as mm_schema
 from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
@@ -24,12 +21,13 @@ ANALYSIS_CLASS_MAPPINGS = {
 }
 
 
-def _annotate_processing(omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-                         start_time: datetime.time,
-                         end_time: datetime.time,
-                         analysis_config: dict,
-                         namespace: str
-                         ) -> None:
+def _annotate_processing(
+    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    start_time: datetime.time,
+    end_time: datetime.time,
+    analysis_config: dict,
+    namespace: str,
+) -> None:
     annotation = {
         "analysis_class": analysis_config["analysis_class"],
         "start_time": str(start_time),
@@ -62,40 +60,37 @@ def process_image(
         },
         output={},
     )
-    module_logger.info(f"Running analysis {analysis.class_name} on image: {image.getId()}")
+    module_logger.info(
+        f"Running analysis {analysis.class_name} on image: {image.getId()}"
+    )
 
     analysis.run()
 
-    module_logger.info(f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed")
+    module_logger.info(
+        f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed"
+    )
 
     return analysis
 
 
-def process_dataset(
-        script_params: dict,
-        dataset: DatasetWrapper,
-        config: dict
-) -> None:
+def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
     # TODO: must note in map_ann the analyses that were done
     # TODO: get comment from script_params
     # TODO: how to process multi-image analysis?
 
     module_logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
 
-    for analysis_name, analysis_config in config["analyses_config"]["assays"].items():
+    for analysis_name, analysis_config in config["assay_config"]["analysis"].items():
         if analysis_config["do_analysis"]:
-            module_logger.info(
-                f"Running analysis {analysis_name}..."
-            )
+            module_logger.info(f"Running analysis {analysis_name}...")
             # TODO: verify if the analysis was already done
+            start_time = datetime.now()
 
             images = omero_tools.get_tagged_images_in_dataset(
                 dataset, analysis_config["data"]["tag_id"]
             )
 
-            for image in images:
-                start_time = datetime.now()
-
+            for image in images:  # TODO: This seems to cover only single image analysis
                 mm_dataset = process_image(image=image, analysis_config=analysis_config)
                 if not mm_dataset.processed:
                     module_logger.error("Analysis failed. Not dumping data")
@@ -104,16 +99,27 @@ def process_dataset(
                     image=image,
                     analysis=mm_dataset,
                 )
-                end_time = datetime.now()
 
-                module_logger.info("Annotating processing metadata")
-                _annotate_processing(
-                    omero_object=image,
-                    start_time=start_time,
-                    end_time=end_time,
-                    analysis_config=analysis_config,
-                    namespace=mm_dataset.class_model_uri,
-                )
+            comment = omero_tools.create_comment(
+                conn=dataset._conn,
+                omero_object=dataset,
+                comment_text=config["script_parameters"]["Comment"],
+                namespace=ANALYSIS_CLASS_MAPPINGS[
+                    analysis_config["analysis_class"]
+                ].class_model_uri,
+            )
+            end_time = datetime.now()
+
+            module_logger.info("Annotating processing metadata")
+            _annotate_processing(
+                omero_object=dataset,
+                start_time=start_time,
+                end_time=end_time,
+                analysis_config=analysis_config,
+                namespace=ANALYSIS_CLASS_MAPPINGS[
+                    analysis_config["analysis_class"]
+                ].class_model_uri,
+            )
 
 
 def dump_image_process(
@@ -164,4 +170,3 @@ def dump_output_element(
     #     case mm_schema.Comment():
     #         dump.dump_comment(conn, output_element, target_omero_object)
     #
-
