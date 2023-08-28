@@ -4,7 +4,8 @@ LABEL authors="Julio Mateos Langerak"
 
 RUN mkdir $OMERODIR/lib/scripts/omero/microscope_metrics
 COPY microscope-metrics/* $OMERODIR/lib/scripts/omero/microscope_metrics/
-COPY microscopemetrics_omero/main_config.yaml /etc/omero_metrics/
+RUN mkdir /etc/microscopemetrics_omero
+COPY microscopemetrics_omero/main_config.yaml /etc/microscopemetrics_omero/
 USER root
 RUN chmod -R 755 $OMERODIR/lib/scripts/omero/microscope_metrics/
 COPY microscopemetrics-0.2.2-py3-none-any.whl .
