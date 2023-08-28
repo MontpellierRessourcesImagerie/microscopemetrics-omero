@@ -79,6 +79,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
     # TODO: how to process multi-image analysis?
 
     module_logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
+    module_logger.info(config)
 
     for analysis_name, analysis_config in config["assay_config"]["analysis"].items():
         if analysis_config["do_analysis"]:
@@ -100,14 +101,21 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                     analysis=mm_dataset,
                 )
 
-            comment = omero_tools.create_comment(
-                conn=dataset._conn,
-                omero_object=dataset,
-                comment_text=config["script_parameters"]["Comment"],
-                namespace=ANALYSIS_CLASS_MAPPINGS[
-                    analysis_config["analysis_class"]
-                ].class_model_uri,
-            )
+            try:
+                logging.info("Adding comment")
+                comment = config["script_parameters"]["Comment"]
+            except KeyError:
+                logging.info("No comment provided")
+                comment = None
+            if comment is not None:
+                _ = omero_tools.create_comment(
+                    conn=dataset._conn,
+                    omero_object=dataset,
+                    comment_text=comment,
+                    namespace=ANALYSIS_CLASS_MAPPINGS[
+                        analysis_config["analysis_class"]
+                    ].class_model_uri,
+                )
             end_time = datetime.now()
 
             module_logger.info("Annotating processing metadata")
