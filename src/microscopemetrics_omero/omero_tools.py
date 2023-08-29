@@ -105,14 +105,7 @@ def get_url_from_object(
 ) -> str:
     """Get the URL from an OMERO object"""
     logger.debug(f"get_url_from_object: object type is {type(obj)}")
-    return (
-        # "https://" +
-        # obj._conn.host +
-        "/webclient/?show="
-        + obj.OMERO_TYPE
-        + "-"
-        + str(obj.getId())
-    )
+    return f"https://{obj._conn.host}/webclient/?show={obj.OMERO_CLASS}-{obj.getId()}"
 
 
 def _label_channels(image: ImageWrapper, labels: List):
