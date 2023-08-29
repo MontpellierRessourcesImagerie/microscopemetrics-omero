@@ -57,7 +57,7 @@ def process_image(
         description=analysis_config["description"],
         input={
             analysis_config["data"]["name"]: {
-                "data": omero_tools.get_image_intensities(image),
+                "data": load.load_image(image),
                 "name": image.getName(),
                 "image_url": omero_tools.get_url_from_object(image),
             },
@@ -110,7 +110,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 logger.info("No comment provided")
                 comment = None
             if comment is not None:
-                _ = omero_tools.create_comment(
+                omero_tools.create_comment(
                     conn=dataset._conn,
                     omero_object=dataset,
                     comment_text=comment,
