@@ -156,8 +156,6 @@ def dump_output_element(
     output_element: mm_schema.MetricsOutput,
     target_omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
 ) -> None:
-    logger.info(f"Dumping {output_element.name}")
-    conn = target_omero_object._conn
     if isinstance(output_element, list):
         for e in output_element:
             dump_output_element(e, target_omero_object)
