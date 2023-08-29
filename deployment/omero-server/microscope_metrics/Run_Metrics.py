@@ -48,22 +48,21 @@ from omero.rtypes import rlong, rstring
 import microscopemetrics_omero.process as process
 
 # Creating logging services
-logger = logging.getLogger("microscopemetrics")
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # create a log string to return warnings in the web interface
 log_string = StringIO()
 string_hdl = logging.StreamHandler(log_string)
-string_hdl.setLevel(logging.WARNING)
+string_hdl.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
     "%(asctime)s: %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
-# formatter = logging.Formatter("%Y-%m-%d %H:%M:%S - %(levelname)s - %(message)s")
 string_hdl.setFormatter(formatter)
 
 # create console handler with a higher log level
 console_hdl = logging.StreamHandler()
-console_hdl.setLevel(logging.INFO)
+console_hdl.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 console_hdl.setFormatter(formatter)
 
@@ -79,6 +78,13 @@ def _read_config_from_file_ann(file_annotation):
 
 
 def run_script():
+    try:
+        with open("/etc/microscopemetrics_omero/main_config.yaml", "r") as f:
+            main_config = yaml.load(f, Loader=yaml.SafeLoader)
+    except FileNotFoundError:
+        logger.error("No main configuration file found: Contact your administrator.")
+        return
+
     client = scripts.client(
         "Run_Metrics.py",
         """This is the main script of microscope-metrics-omero. It will run the analyses on the selected 
@@ -96,12 +102,12 @@ def run_script():
         scripts.List(
             "IDs", optional=False, grouping="1", description="List of Dataset IDs"
         ).ofType(rlong(0)),
-        scripts.String(  # TODO: make enum list with other options. This should be in the main config file
-            "Configuration file name",
+        scripts.String(
+            "Assay type",
             optional=False,
             grouping="1",
-            default="monthly_config.ini",
-            description="Add here any eventuality that you want to add to the analysis",
+            values=[rstring(a) for a in main_config["assays"]],
+            description="Which assay configuration co you want to run",
         ),
         scripts.String(
             "Comment",
@@ -117,13 +123,9 @@ def run_script():
             if client.getInput(key):
                 script_params[key] = client.getInput(key, unwrap=True)
 
-        logger.info(f"Metrics started using parameters: \n{script_params}")
-
-        with open("/etc/omero_metrics/main_config.yaml", "r") as f:
-            main_config = yaml.load(f, Loader=yaml.SafeLoader)
+        logger.debug(f"Metrics started using parameters: {script_params}")
 
         conn = gateway.BlitzGateway(client_obj=client)
-
         logger.info(f"Connection success: {conn.isConnected()}")
 
         datasets = conn.getObjects("Dataset", script_params["IDs"])
@@ -131,34 +133,36 @@ def run_script():
         for dataset in datasets:
             microscope_prj = dataset.getParent()  # We assume one project per dataset
 
-            device_config_file_name = main_config["MAIN"]["device_conf_file_name"]
-            for ann in microscope_prj.listAnnotations():
-                if type(ann) == gateway.FileAnnotationWrapper:
-                    if ann.getFileName() == script_params["Configuration file name"]:
-                        analyses_config = _read_config_from_file_ann(ann)
-                    if ann.getFileName() == device_config_file_name:
-                        device_config = _read_config_from_file_ann(ann)
-
-            if not analyses_config:
+            if microscope_prj is None:
                 logger.error(
-                    f"No analysis configuration found for dataset {dataset.getName()}"
+                    f"No parent project found for dataset {dataset.getName()}: "
+                    f"Every dataset must be part of a project and only one project."
                 )
                 continue
-            if not device_config:
+
+            assay_conf_file_name = f"{script_params['Assay type']}_config.yaml"
+            assay_config = None
+            for ann in microscope_prj.listAnnotations():
+                if (
+                    type(ann) == gateway.FileAnnotationWrapper
+                    and ann.getFileName() == assay_conf_file_name
+                ):
+                    assay_config = _read_config_from_file_ann(ann)
+
+            if not assay_config:
                 logger.error(
-                    f"No device configuration found for dataset {dataset.getName()}"
+                    f"No assay configuration {assay_conf_file_name} found for dataset {dataset.getName()}: "
+                    f"Please contact your administrator"
                 )
                 continue
 
             config = {
+                "script_parameters": script_params,
                 "main_config": main_config,
-                "analyses_config": analyses_config,
-                "device_config": device_config,
+                "assay_config": assay_config,
             }
 
-            process.process_dataset(
-                conn=conn, script_params=script_params, dataset=dataset, config=config
-            )
+            process.process_dataset(dataset=dataset, config=config)
 
         logger.info(f"Metrics analysis finished")
 

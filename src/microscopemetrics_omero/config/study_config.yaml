@@ -1,3 +1,34 @@
+assays:
+  - monthly
+  - yearly
+
+
+FieldIlluminationDataset:
+  input:
+    field_illumination_image:
+  output:
+    key_values:
+      image:
+        link: true
+        as_table: false
+      dataset:
+        link: true
+        as_table: false
+      project:
+        link: true
+        as_table: true
+    intensity_profiles:
+      image:
+        link: true
+    intensity_map:
+      dataset:
+        link: true
+    profile_rois:
+      image:
+        source: field_illumination_image
+        link: true
+
+
 # The name of the device as you want it to appear in teh reports
 device_name: OMX-V4
 # What is the location of the device
