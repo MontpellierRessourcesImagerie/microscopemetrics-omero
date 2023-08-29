@@ -47,6 +47,13 @@ def _annotate_processing(
 def process_image(
     image: ImageWrapper, analysis_config: dict
 ) -> mm_schema.MetricsDataset:
+    module_logger.info(
+        f"Running analysis {analysis_config['analysis_class']} on image: {image.getId()}"
+    )
+    # TODO: remove this
+    module_logger.info(analysis_config)
+    module_logger.info(f"at process_image: {type(image)}")
+
     analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]](
         name=analysis_config["name"],
         description=analysis_config["description"],
@@ -60,10 +67,6 @@ def process_image(
         },
         output={},
     )
-    module_logger.info(
-        f"Running analysis {analysis.class_name} on image: {image.getId()}"
-    )
-
     analysis.run()
 
     module_logger.info(
@@ -92,6 +95,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             )
 
             for image in images:  # TODO: This seems to cover only single image analysis
+                logging.info(f"at process_dataset: {type(image)}")  # TODO: remove this
                 mm_dataset = process_image(image=image, analysis_config=analysis_config)
                 if not mm_dataset.processed:
                     module_logger.error("Analysis failed. Not dumping data")
