@@ -18,6 +18,14 @@ ANALYSIS_CLASS_MAPPINGS = {
     "PSFBeadsAnalysis": field_illumination.FieldIlluminationAnalysis,
 }
 
+OBJECT_TO_DUMP_FUNCTION = {
+    mm_schema.Image: dump.dump_image,
+    mm_schema.ROI: dump.dump_roi,
+    mm_schema.Tag: dump.dump_tag,
+    mm_schema.KeyValues: dump.dump_key_value,
+    mm_schema.Table: dump.dump_table,
+}
+
 
 def _annotate_processing(
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
@@ -151,32 +159,12 @@ def dump_output_element(
     logger.info(f"Dumping {output_element.name}")
     conn = target_omero_object._conn
     if isinstance(output_element, list):
-        [dump_output_element(conn, e, target_omero_object) for e in output_element]
-    elif isinstance(output_element, mm_schema.Image):
-        dump.dump_image(conn, output_element, target_omero_object)
-    elif isinstance(output_element, mm_schema.ROI):
-        dump.dump_roi(conn, output_element, target_omero_object)
-    elif isinstance(output_element, mm_schema.Tag):
-        dump.dump_tag(conn, output_element, target_omero_object)
-    elif isinstance(output_element, mm_schema.KeyValues):
-        dump.dump_key_value(conn, output_element, target_omero_object)
-    elif isinstance(output_element, mm_schema.Table):
-        dump.dump_table(conn, output_element, target_omero_object)
-
-    # TODO: make this a match statement
-    # match output_element:
-    #     case list():
-    #         [dump_output_element(conn, e, target_omero_object, namespace) for e in output_element]
-    #     case mm_schema.Image():
-    #         dump.dump_image(conn, output_element, target_omero_object)
-    #     case mm_schema.ROI():
-    #         dump.dump_roi(conn, output_element, target_omero_object)
-    #     case mm_schema.Tag():
-    #         dump.dump_tag(conn, output_element, target_omero_object)
-    #     case mm_schema.KeyValues():
-    #         dump.dump_key_value(conn, output_element, target_omero_object)
-    #     case mm_schema.Table():
-    #         dump.dump_table(conn, output_element, target_omero_object)
-    #     case mm_schema.Comment():
-    #         dump.dump_comment(conn, output_element, target_omero_object)
-    #
+        for e in output_element:
+            dump_output_element(e, target_omero_object)
+    else:
+        logger.info(f"Dumping {output_element.name} to OMERO")
+        conn = target_omero_object._conn
+        for t, f in OBJECT_TO_DUMP_FUNCTION.items():
+            if isinstance(output_element, t):
+                f(conn, output_element, target_omero_object)
+                break
