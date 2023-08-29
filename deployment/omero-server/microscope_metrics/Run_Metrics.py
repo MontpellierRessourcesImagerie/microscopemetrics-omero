@@ -48,7 +48,7 @@ from omero.rtypes import rlong, rstring
 import microscopemetrics_omero.process as process
 
 # Creating logging services
-logger = logging.getLogger("microscopemetrics")
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # create a log string to return warnings in the web interface
@@ -58,7 +58,6 @@ string_hdl.setLevel(logging.WARNING)
 formatter = logging.Formatter(
     "%(asctime)s: %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
-# formatter = logging.Formatter("%Y-%m-%d %H:%M:%S - %(levelname)s - %(message)s")
 string_hdl.setFormatter(formatter)
 
 # create console handler with a higher log level
