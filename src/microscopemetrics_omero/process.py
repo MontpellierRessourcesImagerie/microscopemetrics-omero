@@ -160,9 +160,12 @@ def dump_output_element(
         for e in output_element:
             dump_output_element(e, target_omero_object)
     else:
-        logger.info(f"Dumping {output_element.name} to OMERO")
+        logger.info(f"Dumping {output_element.class_name} to OMERO")
         conn = target_omero_object._conn
         for t, f in OBJECT_TO_DUMP_FUNCTION.items():
             if isinstance(output_element, t):
-                f(conn, output_element, target_omero_object)
-                break
+                return f(conn, output_element, target_omero_object)
+
+        logger.info(f"{output_element.class_name} output could not be dumped to OMERO")
+
+        return None

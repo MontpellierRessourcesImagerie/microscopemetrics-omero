@@ -54,7 +54,7 @@ logger.setLevel(logging.DEBUG)
 # create a log string to return warnings in the web interface
 log_string = StringIO()
 string_hdl = logging.StreamHandler(log_string)
-string_hdl.setLevel(logging.WARNING)
+string_hdl.setLevel(logging.DEBUG)
 formatter = logging.Formatter(
     "%(asctime)s: %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
@@ -62,7 +62,7 @@ string_hdl.setFormatter(formatter)
 
 # create console handler with a higher log level
 console_hdl = logging.StreamHandler()
-console_hdl.setLevel(logging.INFO)
+console_hdl.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 console_hdl.setFormatter(formatter)
 
