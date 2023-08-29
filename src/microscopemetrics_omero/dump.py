@@ -28,7 +28,7 @@ def dump_image(
     target_dataset: DatasetWrapper,
 ):
     if isinstance(image, mm_schema.Image5D):
-        # TZYXC -> zctyx
+        # microscope-metrics order TZYXC -> OMERO order zctyx
         image_data = (
             np.array(image.data)
             .reshape(
@@ -47,7 +47,7 @@ def dump_image(
             (1, 1, int(image.y.values[0]), int(image.x.values[0]), 1)
         )
     elif isinstance(image, mm_schema.ImageAsNumpy):
-        image_data = image.data
+        image_data = image.data.transpose((1, 4, 0, 2, 3))
     else:
         logger.error(f"Unsupported image type for {image.name}: {image.class_name}")
         return None
