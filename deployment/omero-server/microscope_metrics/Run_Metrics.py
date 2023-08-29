@@ -124,7 +124,7 @@ def run_script():
             if client.getInput(key):
                 script_params[key] = client.getInput(key, unwrap=True)
 
-        logger.info(f"Metrics started using parameters: \n{script_params}")
+        logger.debug(f"Metrics started using parameters: {script_params}")
 
         conn = gateway.BlitzGateway(client_obj=client)
         logger.info(f"Connection success: {conn.isConnected()}")
@@ -136,7 +136,7 @@ def run_script():
 
             if microscope_prj is None:
                 logger.error(
-                    f"No parent project found for dataset {dataset.getName()}:"
+                    f"No parent project found for dataset {dataset.getName()}: "
                     f"Every dataset must be part of a project and only one project."
                 )
                 continue
@@ -152,7 +152,7 @@ def run_script():
 
             if not assay_config:
                 logger.error(
-                    f"No assay configuration {assay_conf_file_name} found for dataset {dataset.getName()}:"
+                    f"No assay configuration {assay_conf_file_name} found for dataset {dataset.getName()}: "
                     f"Please contact your administrator"
                 )
                 continue

@@ -42,7 +42,7 @@ from pandas import DataFrame
 
 from microscopemetrics.data_schema import core_schema as mm_schema
 
-module_logger = logging.getLogger("microscopemetrics_omero.OMERO_tools")
+logger = logging.getLogger(__name__)
 
 DTYPES_NP_TO_OMERO = {
     "int8": enums.PixelsTypeint8,
@@ -104,8 +104,7 @@ def get_url_from_object(
     obj: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]
 ) -> str:
     """Get the URL from an OMERO object"""
-    # TODO: remove this
-    module_logger.info(f"at get_url_from_object: {type(obj)}")
+    logger.debug(f"get_url_from_object: object type is {type(obj)}")
     return (
         # "https://" +
         # obj._conn.host +

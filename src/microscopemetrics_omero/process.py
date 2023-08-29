@@ -10,9 +10,7 @@ from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWra
 
 from microscopemetrics_omero import dump, load
 
-# Creating logging services
-module_logger = logging.getLogger("microscopemetrics_omero.process")
-
+logger = logging.getLogger(__name__)
 
 ANALYSIS_CLASS_MAPPINGS = {
     "ArgolightBAnalysis": argolight.ArgolightBAnalysis,
@@ -47,12 +45,12 @@ def _annotate_processing(
 def process_image(
     image: ImageWrapper, analysis_config: dict
 ) -> mm_schema.MetricsDataset:
-    module_logger.info(
+    logger.info(
         f"Running analysis {analysis_config['analysis_class']} on image: {image.getId()}"
     )
     # TODO: remove this
-    module_logger.info(analysis_config)
-    module_logger.info(f"at process_image: {type(image)}")
+    logger.info(analysis_config)
+    logger.info(f"at process_image: {type(image)}")
 
     analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]](
         name=analysis_config["name"],
@@ -69,7 +67,7 @@ def process_image(
     )
     analysis.run()
 
-    module_logger.info(
+    logger.info(
         f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed"
     )
 
@@ -81,12 +79,12 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
     # TODO: get comment from script_params
     # TODO: how to process multi-image analysis?
 
-    module_logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
-    module_logger.info(config)
+    logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
+    logger.info(config)
 
     for analysis_name, analysis_config in config["assay_config"]["analysis"].items():
         if analysis_config["do_analysis"]:
-            module_logger.info(f"Running analysis {analysis_name}...")
+            logger.info(f"Running analysis {analysis_name}...")
             # TODO: verify if the analysis was already done
             start_time = datetime.now()
 
@@ -95,10 +93,10 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             )
 
             for image in images:  # TODO: This seems to cover only single image analysis
-                logging.info(f"at process_dataset: {type(image)}")  # TODO: remove this
+                logger.info(f"at process_dataset: {type(image)}")  # TODO: remove this
                 mm_dataset = process_image(image=image, analysis_config=analysis_config)
                 if not mm_dataset.processed:
-                    module_logger.error("Analysis failed. Not dumping data")
+                    logger.error("Analysis failed. Not dumping data")
 
                 dump_image_process(
                     image=image,
@@ -106,10 +104,10 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 )
 
             try:
-                logging.info("Adding comment")
+                logger.info("Adding comment")
                 comment = config["script_parameters"]["Comment"]
             except KeyError:
-                logging.info("No comment provided")
+                logger.info("No comment provided")
                 comment = None
             if comment is not None:
                 _ = omero_tools.create_comment(
@@ -122,7 +120,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 )
             end_time = datetime.now()
 
-            module_logger.info("Annotating processing metadata")
+            logger.info("Annotating processing metadata")
             _annotate_processing(
                 omero_object=dataset,
                 start_time=start_time,
@@ -150,7 +148,7 @@ def dump_output_element(
     output_element: mm_schema.MetricsOutput,
     target_omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
 ) -> None:
-    module_logger.info(f"Dumping {output_element.name}")
+    logger.info(f"Dumping {output_element.name}")
     conn = target_omero_object._conn
     if isinstance(output_element, list):
         [dump_output_element(conn, e, target_omero_object) for e in output_element]
