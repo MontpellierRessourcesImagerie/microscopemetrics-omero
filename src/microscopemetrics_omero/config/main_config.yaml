@@ -38,7 +38,16 @@ dump_strategy:
     profile_rois:
       image:
         source: field_illumination_image
-        link: false
+        link: true
+    corner_rois:
+      image:
+        source: field_illumination_image
+        link: true
+    center_of_illumination:
+      image:
+        source: field_illumination_image
+        link: true
+
 
   ArgolightBDataset:
     spots_labels_image:
