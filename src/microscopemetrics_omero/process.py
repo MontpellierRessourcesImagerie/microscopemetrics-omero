@@ -20,7 +20,7 @@ ANALYSIS_CLASS_MAPPINGS = {
 
 OBJECT_TO_DUMP_FUNCTION = {
     mm_schema.Image: dump.dump_image,
-    mm_schema.ROI: dump.dump_roi,
+    mm_schema.Roi: dump.dump_roi,
     mm_schema.Tag: dump.dump_tag,
     mm_schema.KeyValues: dump.dump_key_value,
     mm_schema.Table: dump.dump_table,

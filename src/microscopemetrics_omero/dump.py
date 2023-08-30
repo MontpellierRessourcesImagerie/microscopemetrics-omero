@@ -87,7 +87,7 @@ def dump_image(
 
 def dump_roi(
     conn: BlitzGateway,
-    roi: mm_schema.ROI,
+    roi: mm_schema.Roi,
     target_image: ImageWrapper,
     append_to_existing: bool,
     as_table: bool,
