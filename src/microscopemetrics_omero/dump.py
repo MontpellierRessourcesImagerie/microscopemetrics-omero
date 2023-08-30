@@ -26,7 +26,18 @@ def dump_image(
     conn: BlitzGateway,
     image: mm_schema.Image,
     target_dataset: DatasetWrapper,
+    append_to_existing: bool,
+    as_table: bool,
 ):
+    if append_to_existing or as_table:
+        logger.error(
+            f"Image {image.class_name} cannot be appended to existing or dumped as table. Skipping dump."
+        )
+    if not isinstance(target_dataset, DatasetWrapper):
+        logger.error(
+            f"Image {image.name} must be linked to a dataset. {target_dataset} object provided is not a dataset."
+        )
+        return None
     if isinstance(image, mm_schema.Image5D):
         # microscope-metrics order TZYXC -> OMERO order zctyx
         image_data = (
@@ -77,13 +88,25 @@ def dump_image(
 def dump_roi(
     conn: BlitzGateway,
     roi: mm_schema.ROI,
-    image: ImageWrapper,
+    target_image: ImageWrapper,
+    append_to_existing: bool,
+    as_table: bool,
 ):
+    if append_to_existing or as_table:
+        logger.error(
+            f"ROI {roi.class_name} cannot be appended to existing or dumped as table. Skipping dump."
+        )
+    if not isinstance(target_image, ImageWrapper):
+        logger.error(
+            f"ROI {roi.label} must be linked to an image. {target_image} object provided is not an image."
+        )
+        return None
+
     shapes = [SHAPE_TO_FUNCTION[type(shape)](shape) for shape in roi.shapes]
 
     return omero_tools.create_roi(
         conn=conn,
-        image=image,
+        image=target_image,
         shapes=shapes,
         name=roi.label,
         description=roi.description,
@@ -93,26 +116,38 @@ def dump_roi(
 def dump_tag(
     conn: BlitzGateway,
     tag: mm_schema.Tag,
-    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    target_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    append_to_existing: bool,
+    as_table: bool,
 ):
+    if append_to_existing or as_table:
+        logger.error(
+            f"Tag {tag.class_name} cannot be appended to existing or dumped as table. Skipping dump."
+        )
     # TODO: if tag has an id, we should use that id
     return omero_tools.create_tag(
         conn=conn,
         tag_text=tag.text,
         tag_description=tag.description,
-        omero_object=omero_object,
+        omero_object=target_object,
     )
 
 
 def dump_key_value(
     conn: BlitzGateway,
     key_values: mm_schema.KeyValues,
-    omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    target_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    append_to_existing: bool,
+    as_table: bool,
 ):
+    if append_to_existing or as_table:
+        logger.error(
+            f"KeyValues {key_values.class_name} cannot yet be appended to existing or dumped as table. Skipping dump."
+        )
     return omero_tools.create_key_value(
         conn=conn,
         annotation=key_values._as_dict,
-        omero_object=omero_object,
+        omero_object=target_object,
         annotation_name=key_values.class_name,
         annotation_description=key_values.class_class_uri,
         namespace=key_values.class_model_uri,
@@ -140,6 +175,8 @@ def dump_table(
     conn: BlitzGateway,
     table: mm_schema.Table,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    append_to_existing: bool,
+    as_table: bool,
 ):
     if isinstance(table, mm_schema.TableAsDict):
         # linkML if casting everything as a string and we have to evaluate it back
@@ -170,7 +207,13 @@ def dump_comment(
     conn: BlitzGateway,
     comment: mm_schema.Comment,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    append_to_existing: bool,
+    as_table: bool,
 ):
+    if append_to_existing or as_table:
+        logger.error(
+            f"Comment {comment.class_name} cannot be appended to existing or dumped as table. Skipping dump."
+        )
     return omero_tools.create_comment(
         conn=conn,
         comment_text=comment.text,

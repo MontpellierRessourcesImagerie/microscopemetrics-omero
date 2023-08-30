@@ -1,7 +1,10 @@
 import logging
 from io import StringIO
-from omero.gateway import BlitzGateway
+from datetime import datetime
+from omero.gateway import BlitzGateway, FileAnnotationWrapper
 import yaml
+
+from microscopemetrics_omero import process
 
 logger = logging.getLogger(__name__)
 log_string = StringIO()
@@ -14,7 +17,6 @@ string_hdl.setFormatter(formatter)
 logger.addHandler(string_hdl)
 
 
-
 def _read_config_from_file_ann(file_annotation):
     return yaml.load(
         file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
@@ -22,7 +24,6 @@ def _read_config_from_file_ann(file_annotation):
 
 
 def run_script_local():
-
     try:
         with open("../microscopemetrics_omero/config/main_config.yaml", "r") as f:
             main_config = yaml.load(f, Loader=yaml.SafeLoader)
@@ -30,14 +31,23 @@ def run_script_local():
         logger.error("No main configuration file found: Contact your administrator.")
         return
 
-
     conn = BlitzGateway(
-        username="root", passwd="omero", group="system", port=6064, host="localhost", secure=True
+        username="root",
+        passwd="omero",
+        group="system",
+        port=6064,
+        host="localhost",
+        secure=True,
     )
 
+    # script_params = {
+    #     "IDs": [1],
+    #     "Assay type": "yearly",
+    #     "Comment": "This is a test comment",
+    # }
     script_params = {
-        "IDs": [1],
-        "Configuration file name": "yearly_config.yaml",
+        "IDs": [2],
+        "Assay type": "monthly",
         "Comment": "This is a test comment",
     }
 
@@ -49,18 +59,7 @@ def run_script_local():
 
         logger.info(f"Connection successful: {conn.isConnected()}")
 
-        # Getting the configuration files
-        assay_config =
-        analysis_config = MetricsConfig()
-        analysis_config.read("main_config.ini")  # TODO: read main config from somewhere
-        analysis_config.read(script_params["Configuration file name"])
-
-        device_config = MetricsConfig()
-        device_config.read(analysis_config.get("MAIN", "device_conf_file_name"))
-
-        datasets = conn.getObjects(
-            "Dataset", script_params["IDs"]
-        )
+        datasets = conn.getObjects("Dataset", script_params["IDs"])
 
         for dataset in datasets:
             microscope_prj = dataset.getParent()  # We assume one project per dataset
@@ -76,7 +75,7 @@ def run_script_local():
             assay_config = None
             for ann in microscope_prj.listAnnotations():
                 if (
-                    type(ann) == gateway.FileAnnotationWrapper
+                    type(ann) == FileAnnotationWrapper
                     and ann.getFileName() == assay_conf_file_name
                 ):
                     assay_config = _read_config_from_file_ann(ann)
@@ -102,3 +101,6 @@ def run_script_local():
         log_string.close()
         conn.close()
 
+
+if __name__ == "__main__":
+    run_script_local()

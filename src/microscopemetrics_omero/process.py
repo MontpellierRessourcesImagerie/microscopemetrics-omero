@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 ANALYSIS_CLASS_MAPPINGS = {
     "ArgolightBAnalysis": argolight.ArgolightBAnalysis,
     "ArgolightEAnalysis": argolight.ArgolightEAnalysis,
-    "PSFBeadsAnalysis": field_illumination.FieldIlluminationAnalysis,
+    "FieldIlluminationAnalysis": field_illumination.FieldIlluminationAnalysis,
 }
 
 OBJECT_TO_DUMP_FUNCTION = {
@@ -56,9 +56,6 @@ def process_image(
     logger.info(
         f"Running analysis {analysis_config['analysis_class']} on image: {image.getId()}"
     )
-    # TODO: remove this
-    logger.info(analysis_config)
-    logger.info(f"at process_image: {type(image)}")
 
     analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]](
         name=analysis_config["name"],
@@ -84,7 +81,6 @@ def process_image(
 
 def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
     # TODO: must note in map_ann the analyses that were done
-    # TODO: get comment from script_params
     # TODO: how to process multi-image analysis?
 
     logger.info(f"Analyzing data from Dataset: {dataset.getId()}")
@@ -101,7 +97,6 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             )
 
             for image in images:  # TODO: This seems to cover only single image analysis
-                logger.info(f"at process_dataset: {type(image)}")  # TODO: remove this
                 mm_dataset = process_image(image=image, analysis_config=analysis_config)
                 if not mm_dataset.processed:
                     logger.error("Analysis failed. Not dumping data")
@@ -109,6 +104,9 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 dump_image_process(
                     image=image,
                     analysis=mm_dataset,
+                    dataset_dump_strategy=config["main_config"]["dump_strategy"][
+                        mm_dataset.class_name
+                    ],
                 )
 
             try:
@@ -143,18 +141,40 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
 def dump_image_process(
     image: ImageWrapper,
     analysis: mm_schema.MetricsDataset,
+    dataset_dump_strategy: dict,
 ) -> None:
     for output_field in fields(analysis.output):
         output_element = getattr(analysis.output, output_field.name)
-        dump_output_element(
-            output_element=output_element,
-            target_omero_object=image,
-        )
+
+        for target_type, dump_strategy in dataset_dump_strategy[
+            output_field.name
+        ].items():
+            if dump_strategy["link"]:
+                if target_type == "image":
+                    target_omero_object = image
+                elif target_type == "dataset":
+                    target_omero_object = image.getParent()
+                elif target_type == "project":
+                    target_omero_object = image.getParent().getParent()
+                else:
+                    logger.error(
+                        f"Invalid target type {target_type} for {output_field.name}"
+                    )
+                    continue
+                dump_output_element(
+                    output_element=output_element,
+                    target_omero_object=target_omero_object,
+                    append_to_existing="append_to_existing" in dump_strategy
+                    and dump_strategy["append_to_existing"],
+                    as_table="as_table" in dump_strategy and dump_strategy["as_table"],
+                )
 
 
 def dump_output_element(
     output_element: mm_schema.MetricsOutput,
     target_omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ) -> None:
     if isinstance(output_element, list):
         for e in output_element:
@@ -164,7 +184,13 @@ def dump_output_element(
         conn = target_omero_object._conn
         for t, f in OBJECT_TO_DUMP_FUNCTION.items():
             if isinstance(output_element, t):
-                return f(conn, output_element, target_omero_object)
+                return f(
+                    conn,
+                    output_element,
+                    target_omero_object,
+                    append_to_existing,
+                    as_table,
+                )
 
         logger.info(f"{output_element.class_name} output could not be dumped to OMERO")
 
