@@ -26,8 +26,8 @@ def dump_image(
     conn: BlitzGateway,
     image: mm_schema.Image,
     target_dataset: DatasetWrapper,
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if append_to_existing or as_table:
         logger.error(
@@ -89,8 +89,8 @@ def dump_roi(
     conn: BlitzGateway,
     roi: mm_schema.Roi,
     target_image: ImageWrapper,
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if append_to_existing or as_table:
         logger.error(
@@ -117,8 +117,8 @@ def dump_tag(
     conn: BlitzGateway,
     tag: mm_schema.Tag,
     target_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if append_to_existing or as_table:
         logger.error(
@@ -137,8 +137,8 @@ def dump_key_value(
     conn: BlitzGateway,
     key_values: mm_schema.KeyValues,
     target_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if append_to_existing or as_table:
         logger.error(
@@ -175,8 +175,8 @@ def dump_table(
     conn: BlitzGateway,
     table: mm_schema.Table,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if isinstance(table, mm_schema.TableAsDict):
         # linkML if casting everything as a string and we have to evaluate it back
@@ -207,8 +207,8 @@ def dump_comment(
     conn: BlitzGateway,
     comment: mm_schema.Comment,
     omero_object: Union[ImageWrapper, DatasetWrapper, ProjectWrapper],
-    append_to_existing: bool,
-    as_table: bool,
+    append_to_existing: bool = False,
+    as_table: bool = False,
 ):
     if append_to_existing or as_table:
         logger.error(

@@ -1,4 +1,3 @@
-from numpy import ndarray
 import microscopemetrics_omero.dump as dump
 from omero.gateway import (
     ImageWrapper,

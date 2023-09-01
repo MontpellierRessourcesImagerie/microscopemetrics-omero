@@ -11,6 +11,7 @@ from omero.plugins.group import GroupControl
 from omero.rtypes import rint
 import importlib.util
 import pandas as pd
+import yaml
 
 import microscopemetrics.data_schema.core_schema as mm_schema
 from microscopemetrics.samples import numpy_to_inlined_image, numpy_to_inlined_mask, dict_to_inlined_table
@@ -34,7 +35,7 @@ DEFAULT_OMERO_SECURE = 1
 # [[group, permissions], ...]
 GROUPS_TO_CREATE = [
     ["microscope_1_group", "read-annotate"],
-    ["microscope_2_group", "read-only"],
+    ["microscope_2_group", "read-annotate"],
     ["regular_user_group", "read-only"],
 ]
 
@@ -235,7 +236,7 @@ def mm_roi_fixture(mm_image_mask_fixture):
         )
     ]
 
-    return mm_schema.ROI(
+    return mm_schema.Roi(
         label="test_roi",
         image=["https://example.com/image001"],
         shapes=shapes,
@@ -413,117 +414,62 @@ def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_
     # Don't change anything for default_user!
     # If you change anything about users/groups, make sure they exist
     # [[group, [projects]], ...] per user
-    project_str = {
-        "users": [
-            {
-                "name": "default_user",
-                "groups": [
-                    {
-                        "name": "default_group",
-                        "projects": [
-                            {
-                                "name": f"proj0_{timestamp}",
-                                "datasets": [
-                                    {
-                                        "name": f"ds0_{timestamp}",
-                                        "images": [f"im0_{timestamp}"],
-                                    }
-                                ],
-                            }
-                        ],
-                        "datasets": [],
-                    }
-                ],
-            },
-            {
-                "name": "facility_manager_microscope_1",
-                "groups": [
-                    {
-                        "name": "microscope_1_group",
-                        "projects": [
-                            {
-                                "name": f"proj1_{timestamp}",
-                                "datasets": [
-                                    {
-                                        "name": f"ds1_{timestamp}",
-                                        "images": [f"im1_{timestamp}"],
-                                    }
-                                ],
-                            },
-                            {"name": f"proj2_{timestamp}", "datasets": []},
-                        ],
-                        "datasets": [],
-                    },
-                ],
-            },
-            {
-                "name": "facility_manager_microscope_2",
-                "groups": [
-                    {
-                        "name": "microscope_2_group",
-                        "projects": [
-                            {
-                                "name": f"proj4_{timestamp}",
-                                "datasets": [
-                                    {
-                                        "name": f"ds4_{timestamp}",
-                                        "images": [f"im5_{timestamp}"],
-                                    }
-                                ],
-                            },
-                            {
-                                "name": f"proj5_{timestamp}",
-                                "datasets": [
-                                    {"name": f"ds5_{timestamp}", "images": []}
-                                ],
-                            },
-                        ],
-                        "datasets": [],
-                    },
-                ],
-            },
-        ]
-    }
+    with open("/home/julio/PycharmProjects/microscopemetrics-omero/tests/project_structure.yaml", "r") as f:
+        project_str = yaml.load(f, Loader=yaml.SafeLoader)
+
     project_info = []
     dataset_info = []
     image_info = []
-    for user in project_str["users"]:
-        username = user["name"]
-        for group in user["groups"]:
-            groupname = group["name"]
+    for user_name, user_str in project_str["users"].items():
+        for group_name, group_str in user_str.items():
+            if group_str is None:
+                continue
             current_conn = conn
 
             # New connection if user and group need to be specified
-            if username != "default_user":
-                current_conn = conn.suConn(username, groupname)
+            if user_name != "default_user":
+                current_conn = conn.suConn(user_name, group_name)
 
             # Loop to post projects, datasets, and images
-            for project in group["projects"]:
-                projname = project["name"]
-                proj_id = ezomero.post_project(current_conn, projname, "test project")
-                project_info.append([projname, proj_id])
+            if group_str["projects"] is not None:
+                for project_name, project_str in group_str["projects"].items():
+                    proj_id = ezomero.post_project(current_conn, project_name, "test project")
+                    project_info.append([project_name, proj_id])
 
-                for dataset in project["datasets"]:
-                    dsname = dataset["name"]
+                    if project_str["datasets"] is not None:
+                        for dataset_name, dataset_str in project_str["datasets"].items():
+                            ds_id = ezomero.post_dataset(
+                                current_conn, dataset_name, proj_id, "test dataset"
+                            )
+                            dataset_info.append([dataset_name, ds_id])
+
+                            if dataset_str is not None and dataset_str["images"] is not None:
+                                for image_name in dataset_str["images"]:
+                                    im_id = ezomero.post_image(
+                                        current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                                    )
+                                    image_info.append([image_name, im_id])
+            if group_str["datasets"] is not None:
+                for dataset_name, dataset_str in group_str["datasets"].items():
                     ds_id = ezomero.post_dataset(
-                        current_conn, dsname, proj_id, "test dataset"
+                        current_conn, dataset_name, description="test dataset"
                     )
-                    dataset_info.append([dsname, ds_id])
-
-                    for imname in dataset["images"]:
-                        im_id = ezomero.post_image(
-                            current_conn, numpy_image_fixture, imname, dataset_id=ds_id, dim_order="tzyxc"
-                        )
-                        image_info.append([imname, im_id])
-            for dataset in group["datasets"]:
-                dsname = dataset["name"]
-                ds_id = ezomero.post_dataset(
-                    current_conn, dsname, description="test dataset"
-                )
-                dataset_info.append([dsname, ds_id])
+                    dataset_info.append([dataset_name, ds_id])
+                    if dataset_str is not None and dataset_str["images"] is not None:
+                        for image_name in dataset_str["images"]:
+                            im_id = ezomero.post_image(
+                                current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                            )
+                            image_info.append([image_name, im_id])
+            if group_str["images"] is not None:
+                for image_name in group_str["images"]:
+                    im_id = ezomero.post_image(
+                        current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                    )
+                    image_info.append([image_name, im_id])
 
             # Close temporary connection if it was created
-            if username != "default_user":
+            if user_name != "default_user":
                 current_conn.close()
 
     yield [project_info, dataset_info, image_info]
