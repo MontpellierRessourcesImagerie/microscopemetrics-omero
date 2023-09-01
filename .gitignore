@@ -1,5 +1,5 @@
 /venvs/
-/tests/data/*
+/tests/data/images/*
 /dist/
 
 /.pytest_cache/
