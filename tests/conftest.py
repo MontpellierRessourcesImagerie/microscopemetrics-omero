@@ -34,24 +34,24 @@ DEFAULT_OMERO_SECURE = 1
 
 # [[group, permissions], ...]
 GROUPS_TO_CREATE = [
-    ["microscope_1_group", "read-annotate"],
-    ["microscope_2_group", "read-annotate"],
-    ["regular_user_group", "read-only"],
+    ["microscope_1", "read-annotate"],
+    ["microscope_2", "read-annotate"],
+    ["regular_group", "read-only"],
 ]
 
 # [[user, [groups to be added to], [groups to own]], ...]
 USERS_TO_CREATE = [
     [
         "facility_manager_microscope_1",
-        ["microscope_1_group", "microscope_2_group"],
-        ["microscope_1_group"],
+        ["microscope_1", "microscope_2"],
+        ["microscope_1"],
     ],
     [
         "facility_manager_microscope_2",
-        ["microscope_1_group", "microscope_2_group"],
-        ["microscope_2_group"],
+        ["microscope_1", "microscope_2"],
+        ["microscope_2"],
     ],
-    ["regular_user", ["regular_user_group"], []],
+    ["regular_user", ["regular_group"], []],
 ]
 
 
@@ -309,7 +309,7 @@ def users_groups(conn, omero_params):
     cli.register("user", UserControl, "test")
     cli.register("group", GroupControl, "test")
 
-    group_info = []
+    group_info = {}
     for gname, gperms in GROUPS_TO_CREATE:
         cli.invoke(
             [
@@ -329,9 +329,9 @@ def users_groups(conn, omero_params):
             ]
         )
         gid = ezomero.get_group_id(conn, gname)
-        group_info.append([gname, gid])
+        group_info[gname] = gid
 
-    user_info = []
+    user_info = {}
     for user, groups_add, groups_own in USERS_TO_CREATE:
         # make user while adding to first group
         cli.invoke(
@@ -403,7 +403,7 @@ def users_groups(conn, omero_params):
                     ]
                 )
         uid = ezomero.get_user_id(conn, user)
-        user_info.append([user, uid])
+        user_info[user] = uid
 
     return group_info, user_info
 
@@ -414,12 +414,12 @@ def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_
     # Don't change anything for default_user!
     # If you change anything about users/groups, make sure they exist
     # [[group, [projects]], ...] per user
-    with open("/home/julio/PycharmProjects/microscopemetrics-omero/tests/project_structure.yaml", "r") as f:
+    with open("./tests/project_structure.yaml", "r") as f:
         project_str = yaml.load(f, Loader=yaml.SafeLoader)
 
-    project_info = []
-    dataset_info = []
-    image_info = []
+    project_info = {}
+    dataset_info = {}
+    image_info = {}
     for user_name, user_str in project_str["users"].items():
         for group_name, group_str in user_str.items():
             if group_str is None:
@@ -434,48 +434,48 @@ def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_
             if group_str["projects"] is not None:
                 for project_name, project_str in group_str["projects"].items():
                     proj_id = ezomero.post_project(current_conn, project_name, "test project")
-                    project_info.append([project_name, proj_id])
+                    project_info[project_name] = proj_id
 
                     if project_str["datasets"] is not None:
                         for dataset_name, dataset_str in project_str["datasets"].items():
                             ds_id = ezomero.post_dataset(
                                 current_conn, dataset_name, proj_id, "test dataset"
                             )
-                            dataset_info.append([dataset_name, ds_id])
+                            dataset_info[dataset_name] = ds_id
 
                             if dataset_str is not None and dataset_str["images"] is not None:
                                 for image_name in dataset_str["images"]:
-                                    im_id = ezomero.post_image(
-                                        current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                                    im_id = ezomero.ezimport(
+                                        current_conn, f"./tests/data/images/{image_name}", dataset=ds_id
                                     )
-                                    image_info.append([image_name, im_id])
+                                    image_info[image_name] = im_id[0]
             if group_str["datasets"] is not None:
                 for dataset_name, dataset_str in group_str["datasets"].items():
                     ds_id = ezomero.post_dataset(
                         current_conn, dataset_name, description="test dataset"
                     )
-                    dataset_info.append([dataset_name, ds_id])
+                    dataset_info[dataset_name] = ds_id
                     if dataset_str is not None and dataset_str["images"] is not None:
                         for image_name in dataset_str["images"]:
-                            im_id = ezomero.post_image(
-                                current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                            im_id = ezomero.ezimport(
+                                current_conn, f"./tests/data/images/{image_name}", dataset=ds_id
                             )
-                            image_info.append([image_name, im_id])
+                            image_info[image_name] = im_id[0]
             if group_str["images"] is not None:
                 for image_name in group_str["images"]:
-                    im_id = ezomero.post_image(
-                        current_conn, numpy_image_fixture, image_name, dataset_id=ds_id, dim_order="tzyxc"
+                    im_id = ezomero.ezimport(
+                        current_conn, f"./tests/data/images/{image_name}", dataset=ds_id
                     )
-                    image_info.append([image_name, im_id])
+                    image_info[image_name] = im_id[0]
 
             # Close temporary connection if it was created
             if user_name != "default_user":
                 current_conn.close()
 
-    yield [project_info, dataset_info, image_info]
+    yield {"project_info": project_info, "dataset_info": dataset_info, "image_info": image_info}
     current_group = conn.getGroupFromContext().getId()
     conn.SERVICE_OPTS.setOmeroGroup(-1)
-    for pname, pid in project_info:
+    for pname, pid in project_info.items():
         conn.deleteObjects(
             "Project", [pid], deleteAnns=True, deleteChildren=True, wait=True
         )

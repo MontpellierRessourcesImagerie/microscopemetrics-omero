@@ -1,0 +1,42 @@
+users:
+  default_user:
+    default_group:
+      projects:
+        project_0:
+          datasets:
+            dataset_0:
+              images:
+                - image_0.czi
+      datasets:
+      images:
+  facility_manager_microscope_1:
+    microscope_1:
+      projects:
+        Field_homogeneity:
+          datasets:
+            date_stamp_1:
+              images:
+                - field_illumination_image.czi
+        Argolight_B:
+          datasets:
+            date_stamp_1:
+              images:
+                - argolight_b_image.dv
+#            date_stamp_2:
+#              images:
+#                - argolight_b_image.dv
+      datasets:
+      images:
+#  facility_manager_microscope_2:
+#    microscope_2:
+#      projects:
+#        proj4_timestamp:
+#          datasets:
+#            ds4_timestamp:
+#              images:
+#                - im5_timestamp
+#        proj5_timestamp:
+#          datasets:
+#            ds5_timestamp:
+#      datasets:
+#      images:

@@ -1,0 +1,68 @@
+config_version: 1.0.0
+metrics_generated_tag_id: 1284
+
+#DATASET:
+#  # Creates a user modifiable key-value pairs annotation so the user can fill measurements
+#  analyze_laser_power_measurement: true
+#  # Define which laser wavelengths you want to measure
+#  laser_power_measurement_wavelengths: [405, 488, 532, 561, 642]
+#  # What are the units of those measurements: mW, W,... User SI symbols only
+#  laser_power_measurement_units: mW
+#  # What is the method that has been used to measure the power: back_aperture, source, fiber_exit, objective_lens_exit
+#  laser_power_measurement_method: back_aperture
+
+study:  # This is the OMERO project
+  name: resolution
+  description: Follow the resolution of a microscope over time
+
+analysis:  # These are the OMERO datasets. One dataset per type of analysis
+  Argolight_B:
+    do_analysis: true
+    sample: argolight
+    analysis_class: ArgolightBAnalysis
+    name: Argolight B
+    description: Argolight B analysis (spots pattern)
+    data:
+      name: argolight_b_image
+      tag_id: 1274  # TODO: move to main config
+    parameters:
+      remove_center_cross: true
+      spots_distance: 5.0
+      sigma: [1, 2, 2]
+      lower_threshold_correction_factors: [0.4, 0.5, 0.5, 0.5]
+      upper_threshold_correction_factors: [0.45, 0.7, 0.7, 0.7]
+
+  Argolight_E_x_resolution:
+    do_analysis: true
+    sample: argolight
+    analysis_class: ArgolightEAnalysis
+    description: Argolight E analysis (X resolution)
+    data:
+      name: argolight_e
+      tag_id: 1276  # TODO: move to main config
+    parameters:
+      res_measurement_band: 0.2
+
+  Argolight_E_y_resolution:
+    do_analysis: true
+    sample: argolight
+    analysis_class: ArgolightEAnalysis
+    description: Argolight E analysis (Y resolution)
+    data:
+      name: argolight_e
+      tag_id: 1275  # TODO: move to main config
+    parameters:
+      res_measurement_band: 0.2
+
+  beads:
+    do_analysis: false
+    sample: psf_beads
+    analysis_class: PSFBeadsAnalysis
+    description: PSF beads analysis
+    data:
+      name: psf_beads
+      tag_id: 1279  # TODO: move to main config
+    parameters:
+      sigma: 1
+      min_distance: 50
+

@@ -12,20 +12,19 @@ from omero.gateway import (
 
 
 # def test_dump_image_process(conn, mm_finished_analysis, project_structure):
-#     image_info = project_structure[2]
-#     im_id = image_info[0][1]
+#     image_info = project_structure["image_info"]
+#     im_id = image_info["image_0.czi"]
 #     image = conn.getObject("Image", im_id)
 #     dump.dump_image_process(conn, image, mm_finished_analysis, "test_namespace")
 #
 #
 def test_dump_image(conn, mm_image5d_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
-    image = conn.getObject("Image", im_id)
-    target = image.getParent()
+    dataset_info = project_structure["dataset_info"]
+    ds_id = dataset_info["dataset_0"]
+    dataset = conn.getObject("Dataset", ds_id)
 
     image_obj = dump.dump_image(
-        conn=conn, image=mm_image5d_fixture, target_dataset=target
+        conn=conn, image=mm_image5d_fixture, target_dataset=dataset
     )
     assert image_obj is not None
     assert type(image_obj) == ImageWrapper
@@ -33,8 +32,8 @@ def test_dump_image(conn, mm_image5d_fixture, project_structure):
 
 
 def test_dump_roi(conn, mm_roi_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     roi_obj = dump.dump_roi(conn=conn, roi=mm_roi_fixture, target_image=image)
 
@@ -44,8 +43,8 @@ def test_dump_roi(conn, mm_roi_fixture, project_structure):
 
 
 def test_dump_tag(conn, mm_tag_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     dataset = image.getParent()
     project = dataset.getParent()
@@ -71,8 +70,8 @@ def test_dump_tag(conn, mm_tag_fixture, project_structure):
 
 
 def test_dump_key_value(conn, mm_key_values_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     dataset = image.getParent()
     project = dataset.getParent()
@@ -99,8 +98,8 @@ def test_dump_key_value(conn, mm_key_values_fixture, project_structure):
 
 
 def test_dump_table_as_dict(conn, mm_table_as_dict_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     dataset = image.getParent()
     project = dataset.getParent()
@@ -129,8 +128,8 @@ def test_dump_table_as_dict(conn, mm_table_as_dict_fixture, project_structure):
 def test_dump_table_as_pandas_df(
     conn, mm_table_as_pandas_df_fixture, project_structure
 ):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     dataset = image.getParent()
     project = dataset.getParent()
@@ -157,8 +156,8 @@ def test_dump_table_as_pandas_df(
 
 
 def test_dump_comment(conn, mm_comment_fixture, project_structure):
-    image_info = project_structure[2]
-    im_id = image_info[0][1]
+    image_info = project_structure["image_info"]
+    im_id = image_info["image_0.czi"]
     image = conn.getObject("Image", im_id)
     dataset = image.getParent()
     project = dataset.getParent()
