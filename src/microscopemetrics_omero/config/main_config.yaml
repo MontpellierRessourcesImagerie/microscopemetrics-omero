@@ -20,8 +20,8 @@ dump_strategy:
         as_table: false
       project:
         link: true
-        append_to_existing: true
-        as_table: true
+        append_to_existing: false
+        as_table: false
     intensity_profiles:
       image:
         link: true
@@ -47,7 +47,6 @@ dump_strategy:
       image:
         source: field_illumination_image
         link: true
-
 
   ArgolightBDataset:
     spots_labels_image:
@@ -93,6 +92,15 @@ dump_strategy:
       image:
         link: true
         append_to_existing: false
+    corner_rois:
+      image:
+        source: field_illumination_image
+        link: true
+    center_of_illumination:
+      image:
+        source: field_illumination_image
+        link: true
+
 
   ArgolightEDataset:
     peaks_rois:
