@@ -101,7 +101,6 @@ dump_strategy:
         source: field_illumination_image
         link: true
 
-
   ArgolightEDataset:
     peaks_rois:
       image:
