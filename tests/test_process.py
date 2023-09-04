@@ -9,26 +9,25 @@ from microscopemetrics.data_schema.samples import (
 )
 from microscopemetrics_omero import process, omero_tools
 
-@pytest.fixture(scope="session")
-def field_illumination_dataset(conn, project_structure):
 
+def _generate_dataset(conn, analysis_name, project_structure, dataset_name, image_name, ns, study_conf_path):
     current_conn = conn.suConn("facility_manager_microscope_1", "microscope_1")
 
     dataset_info = project_structure["dataset_info"]
-    dataset_id = dataset_info["fh_date_stamp_1"]
+    dataset_id = dataset_info[dataset_name]
     dataset = current_conn.getObject("Dataset", dataset_id)
     image_info = project_structure["image_info"]
-    image_id = image_info["field_illumination_image.czi"]
+    image_id = image_info[image_name]
     image = current_conn.getObject("Image", image_id)
     project = dataset.getParent()
     project_id = project.getId()
 
     ezomero.post_file_annotation(current_conn, "Project", project_id,
-                                 "./tests/data/config_files/field_illumination_config/study_config.yaml",
-                                 ns=field_illumination_schema.FieldIlluminationDataset.class_model_uri,  # TODO: this is not the right ns. change it
+                                 study_conf_path,
+                                 ns=ns,
                                  across_groups=False,
                                  )
-    tag = omero_tools.create_tag(current_conn, "field_illumination_image",
+    tag = omero_tools.create_tag(current_conn, "target_image",
                                  tag_description="", omero_object=image)
 
     script_params = {"Comment": "This is a test comment"}
@@ -43,7 +42,7 @@ def field_illumination_dataset(conn, project_structure):
                 ann.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
             )
             break
-    study_config["analysis"]["FieldIllumination"]["data"]["tag_id"] = tag.getId()
+    study_config["analysis"][analysis_name]["data"]["tag_id"] = tag.getId()
     config = {
         "script_parameters": script_params,
         "main_config": main_config,
@@ -51,6 +50,16 @@ def field_illumination_dataset(conn, project_structure):
     }
 
     return dataset, config
+
+
+@pytest.fixture
+def field_illumination_dataset(conn, project_structure):
+    return _generate_dataset(conn, "FieldIllumination", project_structure, "fh_date_stamp_1", "field_illumination_image.czi", field_illumination_schema.FieldIlluminationDataset.class_model_uri, "./tests/data/config_files/field_illumination/study_config.yaml")
+
+
+@pytest.fixture(scope="session")
+def argolight_b_dataset(conn, project_structure):
+    return _generate_dataset(conn, "ArgolightB", project_structure, "ab_date_stamp_1", "argolight_b_image.dv", argolight_schema.ArgolightBDataset.class_model_uri, "./tests/data/config_files/argolight_b/study_config.yaml")
 
 
 def test_field_illumination(field_illumination_dataset):
@@ -71,3 +80,24 @@ def test_field_illumination(field_illumination_dataset):
     )
     assert process_annotation
     assert process_annotation["analysis_class"] == "FieldIlluminationAnalysis"
+
+
+def test_argolight_b(argolight_b_dataset):
+    dataset, config = argolight_b_dataset
+    process.process_dataset(dataset=dataset, config=config)
+
+    process_annotation_ids = ezomero.get_map_annotation_ids(
+        conn=dataset._conn,
+        object_type="dataset",
+        object_id=dataset.getId(),
+        ns=str(argolight_schema.ArgolightBDataset.class_model_uri),
+        across_groups=False
+    )
+    process_annotation = ezomero.get_map_annotation(
+        conn=dataset._conn,
+        map_ann_id=process_annotation_ids[-1],
+        across_groups=False
+    )
+    breakpoint()
+    assert process_annotation
+    assert process_annotation["analysis_class"] == "ArgolightBAnalysis"
