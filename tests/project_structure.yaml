@@ -7,19 +7,19 @@ users:
             dataset_0:
               images:
                 - image_0.czi
-      datasets:
-      images:
+      datasets:  # TODO: add orphan datasets
+      images:  # TODO: add orphan images
   facility_manager_microscope_1:
     microscope_1:
       projects:
         Field_homogeneity:
           datasets:
-            date_stamp_1:
+            fh_date_stamp_1:
               images:
                 - field_illumination_image.czi
         Argolight_B:
           datasets:
-            date_stamp_1:
+            ab_date_stamp_1:
               images:
                 - argolight_b_image.dv
 #            date_stamp_2:
