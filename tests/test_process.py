@@ -52,14 +52,43 @@ def _generate_dataset(conn, analysis_name, project_structure, dataset_name, imag
     return dataset, config
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def field_illumination_dataset(conn, project_structure):
-    return _generate_dataset(conn, "FieldIllumination", project_structure, "fh_date_stamp_1", "field_illumination_image.czi", field_illumination_schema.FieldIlluminationDataset.class_model_uri, "./tests/data/config_files/field_illumination/study_config.yaml")
+    return _generate_dataset(
+        conn,
+        "FieldIllumination",
+        project_structure,
+        "fh_date_stamp_1",
+        "field_illumination_image.czi",
+        field_illumination_schema.FieldIlluminationDataset.class_model_uri,
+        "./tests/data/config_files/field_illumination/study_config.yaml")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def argolight_b_dataset(conn, project_structure):
     return _generate_dataset(conn, "ArgolightB", project_structure, "ab_date_stamp_1", "argolight_b_image.dv", argolight_schema.ArgolightBDataset.class_model_uri, "./tests/data/config_files/argolight_b/study_config.yaml")
+
+@pytest.fixture(scope="module")
+def argolight_e_xres_dataset(conn, project_structure):
+    return _generate_dataset(
+        conn,
+        "Argolight_E_x_resolution",
+        project_structure,
+        "ae_date_stamp_1",
+        "argolight_e_x-res_image.dv",
+        argolight_schema.ArgolightEDataset.class_model_uri,
+        "./tests/data/config_files/argolight_e/study_config.yaml")
+
+@pytest.fixture(scope="module")
+def argolight_e_yres_dataset(conn, project_structure):
+    return _generate_dataset(
+        conn,
+        "Argolight_E_y_resolution",
+        project_structure,
+        "ae_date_stamp_1",
+        "argolight_e_y-res_image.dv",
+        argolight_schema.ArgolightEDataset.class_model_uri,
+        "./tests/data/config_files/argolight_e/study_config.yaml")
 
 
 def test_field_illumination(field_illumination_dataset):
@@ -78,6 +107,7 @@ def test_field_illumination(field_illumination_dataset):
         map_ann_id=process_annotation_ids[-1],
         across_groups=False
     )
+
     assert process_annotation
     assert process_annotation["analysis_class"] == "FieldIlluminationAnalysis"
 
@@ -98,6 +128,48 @@ def test_argolight_b(argolight_b_dataset):
         map_ann_id=process_annotation_ids[-1],
         across_groups=False
     )
-    breakpoint()
+
     assert process_annotation
     assert process_annotation["analysis_class"] == "ArgolightBAnalysis"
+
+
+def test_argolight_e_xres(argolight_e_xres_dataset):
+    dataset, config = argolight_e_xres_dataset
+    process.process_dataset(dataset=dataset, config=config)
+
+    process_annotation_ids = ezomero.get_map_annotation_ids(
+        conn=dataset._conn,
+        object_type="dataset",
+        object_id=dataset.getId(),
+        ns=str(argolight_schema.ArgolightEDataset.class_model_uri),
+        across_groups=False
+    )
+    process_annotation = ezomero.get_map_annotation(
+        conn=dataset._conn,
+        map_ann_id=process_annotation_ids[-1],
+        across_groups=False
+    )
+    breakpoint()
+    assert process_annotation
+    assert process_annotation["analysis_class"] == "ArgolightEAnalysis"
+
+
+def test_argolight_e_yres(argolight_e_yres_dataset):
+    dataset, config = argolight_e_yres_dataset
+    process.process_dataset(dataset=dataset, config=config)
+
+    process_annotation_ids = ezomero.get_map_annotation_ids(
+        conn=dataset._conn,
+        object_type="dataset",
+        object_id=dataset.getId(),
+        ns=str(argolight_schema.ArgolightEDataset.class_model_uri),
+        across_groups=False
+    )
+    process_annotation = ezomero.get_map_annotation(
+        conn=dataset._conn,
+        map_ann_id=process_annotation_ids[-1],
+        across_groups=False
+    )
+    breakpoint()
+    assert process_annotation
+    assert process_annotation["analysis_class"] == "ArgolightEAnalysis"

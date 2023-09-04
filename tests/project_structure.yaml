@@ -22,9 +22,12 @@ users:
             ab_date_stamp_1:
               images:
                 - argolight_b_image.dv
-#            date_stamp_2:
-#              images:
-#                - argolight_b_image.dv
+        Argolight_E:
+          datasets:
+            ae_date_stamp_1:
+              images:
+                - argolight_e_x-res_image.dv
+                - argolight_e_y-res_image.dv
       datasets:
       images:
 #  facility_manager_microscope_2:
