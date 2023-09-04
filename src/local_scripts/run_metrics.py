@@ -17,10 +17,21 @@ string_hdl.setFormatter(formatter)
 logger.addHandler(string_hdl)
 
 
-def _read_config_from_file_ann(file_annotation):
-    return yaml.load(
-        file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
+def _get_config_from_file_ann(omero_object, file_name):
+    for ann in omero_object.listAnnotations():
+        if (
+                type(ann) == FileAnnotationWrapper
+                and ann.getFileName() == file_name
+        ):
+            return yaml.load(
+                ann.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
+            )
+
+    logger.error(
+        f"No assay configuration {file_name} found for dataset {omero_object.getName()}: "
+        f"Please contact your administrator"
     )
+    return None
 
 
 def run_script_local():
@@ -42,12 +53,10 @@ def run_script_local():
 
     # script_params = {
     #     "IDs": [1],
-    #     "Assay type": "yearly",
     #     "Comment": "This is a test comment",
     # }
     script_params = {
         "IDs": [2],
-        "Assay type": "monthly",
         "Comment": "This is a test comment",
     }
 
@@ -71,25 +80,13 @@ def run_script_local():
                 )
                 continue
 
-            assay_conf_file_name = f"{script_params['Assay type']}_config.yaml"
-            assay_config = None
-            for ann in microscope_prj.listAnnotations():
-                if (
-                    type(ann) == FileAnnotationWrapper
-                    and ann.getFileName() == assay_conf_file_name
-                ):
-                    assay_config = _read_config_from_file_ann(ann)
-            if not assay_config:
-                logger.error(
-                    f"No assay configuration {assay_conf_file_name} found for dataset {dataset.getName()}: "
-                    f"Please contact your administrator"
-                )
-                continue
+            study_conf_file_name = main_config['study_conf_file_name']
+            study_config = _get_config_from_file_ann(microscope_prj, study_conf_file_name)
 
             config = {
                 "script_parameters": script_params,
                 "main_config": main_config,
-                "assay_config": assay_config,
+                "study_config": study_config,
             }
             process.process_dataset(dataset=dataset, config=config)
 

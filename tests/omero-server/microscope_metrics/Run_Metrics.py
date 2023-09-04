@@ -103,13 +103,6 @@ def run_script():
             "IDs", optional=False, grouping="1", description="List of Dataset IDs"
         ).ofType(rlong(0)),
         scripts.String(
-            "Assay type",
-            optional=False,
-            grouping="1",
-            values=[rstring(a) for a in main_config["assays"]],
-            description="Which assay configuration co you want to run",
-        ),
-        scripts.String(
             "Comment",
             optional=True,
             grouping="2",
@@ -140,18 +133,18 @@ def run_script():
                 )
                 continue
 
-            assay_conf_file_name = f"{script_params['Assay type']}_config.yaml"
-            assay_config = None
+            study_conf_file_name = main_config["study_conf_file_name"]
+            study_config = None
             for ann in microscope_prj.listAnnotations():
                 if (
                     type(ann) == gateway.FileAnnotationWrapper
-                    and ann.getFileName() == assay_conf_file_name
+                    and ann.getFileName() == study_conf_file_name
                 ):
-                    assay_config = _read_config_from_file_ann(ann)
+                    study_config = _read_config_from_file_ann(ann)
 
-            if not assay_config:
+            if not study_config:
                 logger.error(
-                    f"No assay configuration {assay_conf_file_name} found for dataset {dataset.getName()}: "
+                    f"No study configuration {study_conf_file_name} found for dataset {dataset.getName()}: "
                     f"Please contact your administrator"
                 )
                 continue
@@ -159,7 +152,7 @@ def run_script():
             config = {
                 "script_parameters": script_params,
                 "main_config": main_config,
-                "assay_config": assay_config,
+                "study_config": study_config,
             }
 
             process.process_dataset(dataset=dataset, config=config)
