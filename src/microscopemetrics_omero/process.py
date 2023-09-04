@@ -101,13 +101,17 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 if not mm_dataset.processed:
                     logger.error("Analysis failed. Not dumping data")
 
-                dump_image_process(
-                    image=image,
-                    analysis=mm_dataset,
-                    dataset_dump_strategy=config["main_config"]["dump_strategy"][
-                        mm_dataset.class_name
-                    ],
-                )
+                try:
+                    dump_strategy = config["main_config"]["dump_strategy"][mm_dataset.class_name]
+                    dump_image_process(
+                        image=image,
+                        analysis=mm_dataset,
+                        dataset_dump_strategy=dump_strategy
+                    )
+
+                except KeyError as e:
+                    logger.error(f"No dump strategy found for {mm_dataset.class_name}")
+                    raise e
 
             try:
                 logger.info("Adding comment")
@@ -115,6 +119,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             except KeyError:
                 logger.info("No comment provided")
                 comment = None
+
             if comment is not None:
                 omero_tools.create_comment(
                     conn=dataset._conn,
