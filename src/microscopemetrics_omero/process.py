@@ -38,6 +38,7 @@ def _annotate_processing(
         "analysis_class": analysis_config["analysis_class"],
         "start_time": str(start_time),
         "end_time": str(end_time),
+        # TODO: add image ids
         **analysis_config["parameters"],
     }
 
