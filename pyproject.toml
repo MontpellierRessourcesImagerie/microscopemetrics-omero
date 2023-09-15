@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["microscopy", "metrology"]
 
 [tool.pytest.ini_options]
-addopts = "--cov"
+#addopts = "--cov"
 testpaths = [
     "tests"
 ]
@@ -48,7 +48,7 @@ pyyaml = "^6.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^6.2.0"
-pytest-cov = "^4.0.0"
+#pytest-cov = "^4.0.0"
 tox = "^3.26.0"
 ezomero = "^1.0.0"
 
