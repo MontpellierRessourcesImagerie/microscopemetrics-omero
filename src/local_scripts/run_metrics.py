@@ -43,9 +43,9 @@ def run_script_local():
         return
 
     conn = BlitzGateway(
-        username="root",
-        passwd="omero",
-        group="system",
+        username="facility_manager_microscope_1",
+        passwd="abc123",
+        group="microscope_1",
         port=6064,
         host="localhost",
         secure=True,
