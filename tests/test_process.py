@@ -149,7 +149,7 @@ def test_argolight_e_xres(argolight_e_xres_dataset):
         map_ann_id=process_annotation_ids[-1],
         across_groups=False
     )
-    breakpoint()
+
     assert process_annotation
     assert process_annotation["analysis_class"] == "ArgolightEAnalysis"
 
@@ -170,6 +170,6 @@ def test_argolight_e_yres(argolight_e_yres_dataset):
         map_ann_id=process_annotation_ids[-1],
         across_groups=False
     )
-    breakpoint()
+
     assert process_annotation
     assert process_annotation["analysis_class"] == "ArgolightEAnalysis"
