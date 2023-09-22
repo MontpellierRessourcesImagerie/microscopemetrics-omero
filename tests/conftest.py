@@ -13,7 +13,7 @@ import importlib.util
 import pandas as pd
 import yaml
 
-import microscopemetrics.data_schema.core_schema as mm_schema
+import microscopemetrics_schema.datamodel as mm_schema
 from microscopemetrics.samples import numpy_to_inlined_image, numpy_to_inlined_mask, dict_to_inlined_table
 
 # TODO: make a test dataset programmatically
