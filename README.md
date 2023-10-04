@@ -46,9 +46,18 @@ in the root directory of the project
 
 ## Running Tests
 
-To run tests, use pytest from the root directory of the project
+To run tests, you need to install docker-compose and create an OMERO 
+instance using the docker-compose.yaml in the tests directory.
+
+```bash
+  cd tests
+  docker-compose up -d
+```
+
+Then run pytest in the root directory of the project to run the tests.
 
 ```bash
   pytest 
 ```
+
 
