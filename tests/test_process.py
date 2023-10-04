@@ -3,9 +3,10 @@ import ezomero
 import yaml
 from omero.gateway import FileAnnotationWrapper
 
-from microscopemetrics.data_schema.samples import (
-    field_illumination_schema,
-    argolight_schema,
+from microscopemetrics_schema.datamodel import (
+    FieldIlluminationDataset,
+    ArgolightBDataset,
+    ArgolightEDataset,
 )
 from microscopemetrics_omero import process, omero_tools
 
@@ -60,13 +61,13 @@ def field_illumination_dataset(conn, project_structure):
         project_structure,
         "fh_date_stamp_1",
         "field_illumination_image.czi",
-        field_illumination_schema.FieldIlluminationDataset.class_model_uri,
+        FieldIlluminationDataset.class_model_uri,
         "./tests/data/config_files/field_illumination/study_config.yaml")
 
 
 @pytest.fixture(scope="module")
 def argolight_b_dataset(conn, project_structure):
-    return _generate_dataset(conn, "ArgolightB", project_structure, "ab_date_stamp_1", "argolight_b_image.dv", argolight_schema.ArgolightBDataset.class_model_uri, "./tests/data/config_files/argolight_b/study_config.yaml")
+    return _generate_dataset(conn, "ArgolightB", project_structure, "ab_date_stamp_1", "argolight_b_image.dv", ArgolightBDataset.class_model_uri, "./tests/data/config_files/argolight_b/study_config.yaml")
 
 @pytest.fixture(scope="module")
 def argolight_e_xres_dataset(conn, project_structure):
@@ -76,7 +77,7 @@ def argolight_e_xres_dataset(conn, project_structure):
         project_structure,
         "ae_date_stamp_1",
         "argolight_e_x-res_image.dv",
-        argolight_schema.ArgolightEDataset.class_model_uri,
+        ArgolightEDataset.class_model_uri,
         "./tests/data/config_files/argolight_e/study_config.yaml")
 
 @pytest.fixture(scope="module")
@@ -87,7 +88,7 @@ def argolight_e_yres_dataset(conn, project_structure):
         project_structure,
         "ae_date_stamp_1",
         "argolight_e_y-res_image.dv",
-        argolight_schema.ArgolightEDataset.class_model_uri,
+        ArgolightEDataset.class_model_uri,
         "./tests/data/config_files/argolight_e/study_config.yaml")
 
 
@@ -99,7 +100,7 @@ def test_field_illumination(field_illumination_dataset):
         conn=dataset._conn,
         object_type="dataset",
         object_id=dataset.getId(),
-        ns=str(field_illumination_schema.FieldIlluminationDataset.class_model_uri),
+        ns=str(FieldIlluminationDataset.class_model_uri),
         across_groups=False
     )
     process_annotation = ezomero.get_map_annotation(
@@ -120,7 +121,7 @@ def test_argolight_b(argolight_b_dataset):
         conn=dataset._conn,
         object_type="dataset",
         object_id=dataset.getId(),
-        ns=str(argolight_schema.ArgolightBDataset.class_model_uri),
+        ns=str(ArgolightBDataset.class_model_uri),
         across_groups=False
     )
     process_annotation = ezomero.get_map_annotation(
@@ -141,7 +142,7 @@ def test_argolight_e_xres(argolight_e_xres_dataset):
         conn=dataset._conn,
         object_type="dataset",
         object_id=dataset.getId(),
-        ns=str(argolight_schema.ArgolightEDataset.class_model_uri),
+        ns=str(ArgolightEDataset.class_model_uri),
         across_groups=False
     )
     process_annotation = ezomero.get_map_annotation(
@@ -162,7 +163,7 @@ def test_argolight_e_yres(argolight_e_yres_dataset):
         conn=dataset._conn,
         object_type="dataset",
         object_id=dataset.getId(),
-        ns=str(argolight_schema.ArgolightEDataset.class_model_uri),
+        ns=str(ArgolightEDataset.class_model_uri),
         across_groups=False
     )
     process_annotation = ezomero.get_map_annotation(
