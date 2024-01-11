@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from microscopemetrics.data_schema import core_schema as mm_schema
+from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
 from omero import grid
 from omero.constants import metadata
 from omero.gateway import (
