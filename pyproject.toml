@@ -43,19 +43,19 @@ filterwarnings = [
 python = ">=3.8 <=3.11"
 #microscopemetrics = "0.2.2"
 microscopemetrics = {git = "https://github.com/juliomateoslangerak/microscope-metrics.git", branch = "main"}
-omero-py = "^5.13.0"
-pyyaml = "^6.0"
+omero-py = "^5"
+pyyaml = "^6"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^6.2.0"
-#pytest-cov = "^4.0.0"
-tox = "^3.26.0"
-ezomero = "^1.0.0"
+pytest = "^6"
+#pytest-cov = "^4.0.0"  # pytest-cov seems it have issues with pycharm debugging
+tox = "^3"
+ezomero = "^1"
 
 [tool.poetry.group.dev.dependencies]
-blacked = "^0.1.0-alpha.4"
-poetry = "^1.2.2"
-isort = "^5.12.0"
+blacked = "^0.1"
+poetry = "^1"
+isort = "^5"
 
 [build-system]
 requires = ["poetry-core=1.7.0"]
