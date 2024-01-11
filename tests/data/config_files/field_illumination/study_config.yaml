@@ -24,7 +24,6 @@ analysis:  # These are the OMERO datasets. One dataset per type of analysis
     description: Analysis on chroma slides
     data:
       name: field_illumination_image
-      tag_id:
     parameters:
       bit_depth: 16
       saturation_threshold: 0.01
