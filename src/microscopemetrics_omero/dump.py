@@ -1,12 +1,12 @@
-import logging
-
-from typing import Union
-import numpy as np
 import ast
+import logging
+from typing import Union
+
+import numpy as np
+from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
+from omero.gateway import BlitzGateway, DatasetWrapper, ImageWrapper, ProjectWrapper
 
 from microscopemetrics_omero import omero_tools
-from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
-from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
 logger = logging.getLogger(__name__)
 

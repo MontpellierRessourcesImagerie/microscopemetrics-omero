@@ -1,5 +1,7 @@
 from numpy import ndarray
+
 import microscopemetrics_omero.load as load
+
 
 def test_load_image(conn, numpy_image_fixture, project_structure):
     image_info = project_structure["image_info"]

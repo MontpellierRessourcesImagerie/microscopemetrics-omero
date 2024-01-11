@@ -72,14 +72,12 @@ def validate_dataset(dataset):
     # Currently namespace is annotated in the description
     # TODO: Fix storing laser power measurements without namespace
     for ann in dataset.listAnnotations():
-        if isinstance(
-            ann, gateway.MapAnnotationWrapper
-        ) and ann.getDescription().startswith(UNVALIDATED_NAMESPACE_PREFIX):
+        if isinstance(ann, gateway.MapAnnotationWrapper) and ann.getDescription().startswith(
+            UNVALIDATED_NAMESPACE_PREFIX
+        ):
             namespace = ann.getDescription()
             ann.setNs(
-                namespace.replace(
-                    UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1
-                )
+                namespace.replace(UNVALIDATED_NAMESPACE_PREFIX, VALIDATED_NAMESPACE_PREFIX, 1)
             )
             ann.setDescription("")
             changes_count += 1
@@ -140,9 +138,7 @@ def validate_dataset(dataset):
 def run_script_local():
     from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
-    conn = gateway.BlitzGateway(
-        username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
-    )
+    conn = gateway.BlitzGateway(username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST)
 
     script_params = {
         "IDs": [1],
@@ -160,9 +156,7 @@ def run_script_local():
 
         logger.info(f"Connection success: {conn.isConnected()}")
 
-        datasets = conn.getObjects(
-            "Dataset", script_params["IDs"]
-        )  # generator of datasets
+        datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
 
         for dataset in datasets:
             validate_dataset(dataset=dataset)
@@ -185,9 +179,9 @@ def run_script():
             values=[rstring("Dataset")],
             default="Dataset",
         ),
-        scripts.List(
-            "IDs", optional=False, grouping="1", description="List of Dataset IDs"
-        ).ofType(rlong(0)),
+        scripts.List("IDs", optional=False, grouping="1", description="List of Dataset IDs").ofType(
+            rlong(0)
+        ),
         scripts.Bool(
             "Confirm validation",
             optional=False,
@@ -216,9 +210,7 @@ def run_script():
 
             logger.info(f"Connection success: {conn.isConnected()}")
 
-            datasets = conn.getObjects(
-                "Dataset", script_params["IDs"]
-            )  # generator of datasets
+            datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
 
             for dataset in datasets:
                 validate_dataset(dataset=dataset)

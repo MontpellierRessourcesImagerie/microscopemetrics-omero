@@ -52,9 +52,7 @@ def clean_dataset(connection, dataset, namespace_like=None):
     logger.info(f"Date and time: {datetime.now()}")
 
     # Clean Dataset annotations
-    for (
-        ann
-    ) in dataset.listAnnotations():  # TODO: We do not remove original file annotations
+    for ann in dataset.listAnnotations():  # TODO: We do not remove original file annotations
         if isinstance(
             ann,
             (
@@ -95,9 +93,7 @@ def clean_dataset(connection, dataset, namespace_like=None):
     # Clean File and map annotations on rest of images
     for image in dataset.listChildren():
         for ann in image.listAnnotations():
-            if isinstance(
-                ann, (gateway.MapAnnotationWrapper, gateway.FileAnnotationWrapper)
-            ):
+            if isinstance(ann, (gateway.MapAnnotationWrapper, gateway.FileAnnotationWrapper)):
                 connection.deleteObjects("Annotation", [ann.getId()], wait=True)
 
     # Delete all rois
@@ -112,9 +108,7 @@ def clean_dataset(connection, dataset, namespace_like=None):
 def run_script_local():
     from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
-    conn = gateway.BlitzGateway(
-        username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
-    )
+    conn = gateway.BlitzGateway(username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST)
 
     script_params = {
         "IDs": [1],
@@ -133,9 +127,7 @@ def run_script_local():
 
         logger.info(f"Connection success: {conn.isConnected()}")
 
-        datasets = conn.getObjects(
-            "Dataset", script_params["IDs"]
-        )  # generator of datasets
+        datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
 
         for dataset in datasets:
             clean_dataset(connection=conn, dataset=dataset)
@@ -158,9 +150,9 @@ def run_script():
             values=[rstring("Dataset")],
             default="Dataset",
         ),
-        scripts.List(
-            "IDs", optional=False, grouping="1", description="List of Dataset IDs"
-        ).ofType(rlong(0)),
+        scripts.List("IDs", optional=False, grouping="1", description="List of Dataset IDs").ofType(
+            rlong(0)
+        ),
         scripts.Bool(
             "Confirm deletion",
             optional=False,
@@ -190,9 +182,7 @@ def run_script():
 
             logger.info(f"Connection success: {conn.isConnected()}")
 
-            datasets = conn.getObjects(
-                "Dataset", script_params["IDs"]
-            )  # generator of datasets
+            datasets = conn.getObjects("Dataset", script_params["IDs"])  # generator of datasets
 
             for dataset in datasets:
                 logger.info(f"deleting data from Dataset: {dataset.getId()}")

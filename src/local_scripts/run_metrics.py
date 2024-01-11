@@ -1,8 +1,9 @@
 import logging
-from io import StringIO
 from datetime import datetime
-from omero.gateway import BlitzGateway, FileAnnotationWrapper
+from io import StringIO
+
 import yaml
+from omero.gateway import BlitzGateway, FileAnnotationWrapper
 
 from microscopemetrics_omero import process
 
@@ -19,13 +20,8 @@ logger.addHandler(string_hdl)
 
 def _get_config_from_file_ann(omero_object, file_name):
     for ann in omero_object.listAnnotations():
-        if (
-                type(ann) == FileAnnotationWrapper
-                and ann.getFileName() == file_name
-        ):
-            return yaml.load(
-                ann.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
-            )
+        if type(ann) == FileAnnotationWrapper and ann.getFileName() == file_name:
+            return yaml.load(ann.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader)
 
     logger.error(
         f"No assay configuration {file_name} found for dataset {omero_object.getName()}: "
@@ -80,7 +76,7 @@ def run_script_local():
                 )
                 continue
 
-            study_conf_file_name = main_config['study_conf_file_name']
+            study_conf_file_name = main_config["study_conf_file_name"]
             study_config = _get_config_from_file_ann(microscope_prj, study_conf_file_name)
 
             config = {

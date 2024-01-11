@@ -1,28 +1,29 @@
-import os
-import pytest
-import subprocess
-import numpy as np
-from datetime import datetime
-from omero.cli import CLI
-from omero.gateway import BlitzGateway
-from omero.plugins.sessions import SessionsControl
-from omero.plugins.user import UserControl
-from omero.plugins.group import GroupControl
-from omero.rtypes import rint
 import importlib.util
-import pandas as pd
-import yaml
+import os
+import subprocess
+from datetime import datetime
 
+import ezomero
 import microscopemetrics_schema.datamodel as mm_schema
-from microscopemetrics.samples import numpy_to_inlined_image, numpy_to_inlined_mask, dict_to_inlined_table
+import numpy as np
+import pandas as pd
+import pytest
+import yaml
+from microscopemetrics.samples import (
+    dict_to_inlined_table,
+    numpy_to_inlined_image,
+    numpy_to_inlined_mask,
+)
 
 # TODO: make a test dataset programmatically
 from microscopemetrics.samples.field_illumination import FieldIlluminationAnalysis
+from omero.cli import CLI
+from omero.gateway import BlitzGateway
+from omero.plugins.group import GroupControl
+from omero.plugins.sessions import SessionsControl
+from omero.plugins.user import UserControl
+from omero.rtypes import rint
 from pydantic.color import Color
-
-
-import ezomero
-
 
 # Settings for OMERO
 DEFAULT_OMERO_USER = "root"
@@ -233,7 +234,7 @@ def mm_roi_fixture(mm_image_mask_fixture):
             z=0,
             t=0,
             c=0,
-        )
+        ),
     ]
 
     return mm_schema.Roi(
@@ -446,7 +447,9 @@ def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_
                             if dataset_str is not None and dataset_str["images"] is not None:
                                 for image_name in dataset_str["images"]:
                                     im_id = ezomero.ezimport(
-                                        current_conn, f"./tests/data/images/{image_name}", dataset=ds_id
+                                        current_conn,
+                                        f"./tests/data/images/{image_name}",
+                                        dataset=ds_id,
                                     )
                                     image_info[image_name] = im_id[0]
             if group_str["datasets"] is not None:
@@ -475,10 +478,10 @@ def project_structure(conn, timestamp, numpy_image_fixture, users_groups, omero_
     yield {"project_info": project_info, "dataset_info": dataset_info, "image_info": image_info}
     current_group = conn.getGroupFromContext().getId()
     conn.SERVICE_OPTS.setOmeroGroup(-1)
-    for pname, pid in project_info.items():
-        conn.deleteObjects(
-            "Project", [pid], deleteAnns=True, deleteChildren=True, wait=True
-        )
+    # for pname, pid in project_info.items():
+    #     conn.deleteObjects(
+    #         "Project", [pid], deleteAnns=True, deleteChildren=True, wait=True
+    #     )
     conn.SERVICE_OPTS.setOmeroGroup(current_group)
 
 
@@ -518,14 +521,10 @@ def dict_table_fixture():
 @pytest.fixture
 def pandas_df_fixture(dict_table_fixture):
     return pd.DataFrame.from_records(
-        [
-            dict(zip(dict_table_fixture, r))
-            for r in zip(*dict_table_fixture.values())
-        ]
+        [dict(zip(dict_table_fixture, r)) for r in zip(*dict_table_fixture.values())]
     )
 
 
 @pytest.fixture(scope="session")
 def timestamp():
     return f"{datetime.now():%Y%m%d%H%M%S}"
-

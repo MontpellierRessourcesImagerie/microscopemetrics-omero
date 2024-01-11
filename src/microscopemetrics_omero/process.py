@@ -1,14 +1,13 @@
 import logging
+from dataclasses import fields
 from datetime import datetime
 from typing import Union
-from dataclasses import fields
 
-from microscopemetrics_omero import omero_tools
 from microscopemetrics.samples import argolight, field_illumination
 from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
-from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
+from omero.gateway import BlitzGateway, DatasetWrapper, ImageWrapper, ProjectWrapper
 
-from microscopemetrics_omero import dump, load
+from microscopemetrics_omero import dump, load, omero_tools
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +50,8 @@ def _annotate_processing(
     )
 
 
-def process_image(
-    image: ImageWrapper, analysis_config: dict
-) -> mm_schema.MetricsDataset:
-    logger.info(
-        f"Running analysis {analysis_config['analysis_class']} on image: {image.getId()}"
-    )
+def process_image(image: ImageWrapper, analysis_config: dict) -> mm_schema.MetricsDataset:
+    logger.info(f"Running analysis {analysis_config['analysis_class']} on image: {image.getId()}")
 
     analysis = ANALYSIS_CLASS_MAPPINGS[analysis_config["analysis_class"]](
         name=analysis_config["name"],
@@ -73,9 +68,7 @@ def process_image(
     )
     analysis.run()
 
-    logger.info(
-        f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed"
-    )
+    logger.info(f"Analysis {analysis_config['analysis_class']} on image {image.getId()} completed")
 
     return analysis
 
@@ -93,7 +86,10 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             # TODO: verify if the analysis was already done
             start_time = datetime.now()
 
-            if "tag_id" in analysis_config["data"] and analysis_config["data"]["tag_id"] is not None:
+            if (
+                "tag_id" in analysis_config["data"]
+                and analysis_config["data"]["tag_id"] is not None
+            ):
                 images = omero_tools.get_tagged_images_in_dataset(
                     dataset, analysis_config["data"]["tag_id"]
                 )
@@ -108,9 +104,7 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
                 try:
                     dump_strategy = config["main_config"]["dump_strategy"][mm_dataset.class_name]
                     dump_image_process(
-                        image=image,
-                        analysis=mm_dataset,
-                        dataset_dump_strategy=dump_strategy
+                        image=image, analysis=mm_dataset, dataset_dump_strategy=dump_strategy
                     )
 
                 except KeyError as e:
@@ -155,9 +149,7 @@ def dump_image_process(
     for output_field in fields(analysis.output):
         output_element = getattr(analysis.output, output_field.name)
 
-        for target_type, dump_strategy in dataset_dump_strategy[
-            output_field.name
-        ].items():
+        for target_type, dump_strategy in dataset_dump_strategy[output_field.name].items():
             if dump_strategy["link"]:
                 if target_type == "image":
                     target_omero_object = image
@@ -166,9 +158,7 @@ def dump_image_process(
                 elif target_type == "project":
                     target_omero_object = image.getParent().getParent()
                 else:
-                    logger.error(
-                        f"Invalid target type {target_type} for {output_field.name}"
-                    )
+                    logger.error(f"Invalid target type {target_type} for {output_field.name}")
                     continue
                 dump_output_element(
                     output_element=output_element,

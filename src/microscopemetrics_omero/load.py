@@ -1,12 +1,9 @@
 import logging
 
-from microscopemetrics_omero import omero_tools
-from omero.gateway import (
-    ImageWrapper,
-    DatasetWrapper,
-    ProjectWrapper,
-)
 import numpy as np
+from omero.gateway import DatasetWrapper, ImageWrapper, ProjectWrapper
+
+from microscopemetrics_omero import omero_tools
 
 # Creating logging services
 logger = logging.getLogger(__name__)

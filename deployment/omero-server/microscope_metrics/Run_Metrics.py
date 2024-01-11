@@ -72,9 +72,7 @@ logger.addHandler(string_hdl)
 
 
 def _read_config_from_file_ann(file_annotation):
-    return yaml.load(
-        file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
-    )
+    return yaml.load(file_annotation.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader)
 
 
 def run_script():
@@ -99,9 +97,9 @@ def run_script():
             values=[rstring("Dataset")],
             default="Dataset",
         ),
-        scripts.List(
-            "IDs", optional=False, grouping="1", description="List of Dataset IDs"
-        ).ofType(rlong(0)),
+        scripts.List("IDs", optional=False, grouping="1", description="List of Dataset IDs").ofType(
+            rlong(0)
+        ),
         scripts.String(
             "Assay type",
             optional=False,

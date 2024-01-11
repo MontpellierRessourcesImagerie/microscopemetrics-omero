@@ -1,17 +1,19 @@
-import pytest
 import ezomero
+import pytest
 import yaml
-from omero.gateway import FileAnnotationWrapper
-
 from microscopemetrics_schema.datamodel import (
-    FieldIlluminationDataset,
     ArgolightBDataset,
     ArgolightEDataset,
+    FieldIlluminationDataset,
 )
-from microscopemetrics_omero import process, omero_tools
+from omero.gateway import FileAnnotationWrapper
+
+from microscopemetrics_omero import omero_tools, process
 
 
-def _generate_dataset(conn, analysis_name, project_structure, dataset_name, image_name, ns, study_conf_path):
+def _generate_dataset(
+    conn, analysis_name, project_structure, dataset_name, image_name, ns, study_conf_path
+):
     current_conn = conn.suConn("facility_manager_microscope_1", "microscope_1")
 
     dataset_info = project_structure["dataset_info"]
@@ -23,21 +25,25 @@ def _generate_dataset(conn, analysis_name, project_structure, dataset_name, imag
     project = dataset.getParent()
     project_id = project.getId()
 
-    ezomero.post_file_annotation(current_conn, "Project", project_id,
-                                 study_conf_path,
-                                 ns=ns,
-                                 across_groups=False,
-                                 )
-    tag = omero_tools.create_tag(current_conn, "target_image",
-                                 tag_description="", omero_object=image)
+    ezomero.post_file_annotation(
+        current_conn,
+        "Project",
+        project_id,
+        study_conf_path,
+        ns=ns,
+        across_groups=False,
+    )
+    tag = omero_tools.create_tag(
+        current_conn, "target_image", tag_description="", omero_object=image
+    )
 
     script_params = {"Comment": "This is a test comment"}
     with open("./src/microscopemetrics_omero/config/main_config.yaml", "r") as f:
         main_config = yaml.load(f, Loader=yaml.SafeLoader)
     for ann in project.listAnnotations():
         if (
-                isinstance(ann, FileAnnotationWrapper)
-                and ann.getFileName() == main_config["study_conf_file_name"]
+            isinstance(ann, FileAnnotationWrapper)
+            and ann.getFileName() == main_config["study_conf_file_name"]
         ):
             study_config = yaml.load(
                 ann.getFileInChunks().__next__().decode(), Loader=yaml.SafeLoader
@@ -62,12 +68,22 @@ def field_illumination_dataset(conn, project_structure):
         "fh_date_stamp_1",
         "field_illumination_image.czi",
         FieldIlluminationDataset.class_model_uri,
-        "./tests/data/config_files/field_illumination/study_config.yaml")
+        "./tests/data/config_files/field_illumination/study_config.yaml",
+    )
 
 
 @pytest.fixture(scope="module")
 def argolight_b_dataset(conn, project_structure):
-    return _generate_dataset(conn, "ArgolightB", project_structure, "ab_date_stamp_1", "argolight_b_image.dv", ArgolightBDataset.class_model_uri, "./tests/data/config_files/argolight_b/study_config.yaml")
+    return _generate_dataset(
+        conn,
+        "ArgolightB",
+        project_structure,
+        "ab_date_stamp_1",
+        "argolight_b_image.dv",
+        ArgolightBDataset.class_model_uri,
+        "./tests/data/config_files/argolight_b/study_config.yaml",
+    )
+
 
 @pytest.fixture(scope="module")
 def argolight_e_xres_dataset(conn, project_structure):
@@ -78,7 +94,9 @@ def argolight_e_xres_dataset(conn, project_structure):
         "ae_date_stamp_1",
         "argolight_e_x-res_image.dv",
         ArgolightEDataset.class_model_uri,
-        "./tests/data/config_files/argolight_e/study_config.yaml")
+        "./tests/data/config_files/argolight_e/study_config.yaml",
+    )
+
 
 @pytest.fixture(scope="module")
 def argolight_e_yres_dataset(conn, project_structure):
@@ -89,7 +107,8 @@ def argolight_e_yres_dataset(conn, project_structure):
         "ae_date_stamp_1",
         "argolight_e_y-res_image.dv",
         ArgolightEDataset.class_model_uri,
-        "./tests/data/config_files/argolight_e/study_config.yaml")
+        "./tests/data/config_files/argolight_e/study_config.yaml",
+    )
 
 
 def test_field_illumination(field_illumination_dataset):
@@ -101,12 +120,10 @@ def test_field_illumination(field_illumination_dataset):
         object_type="dataset",
         object_id=dataset.getId(),
         ns=str(FieldIlluminationDataset.class_model_uri),
-        across_groups=False
+        across_groups=False,
     )
     process_annotation = ezomero.get_map_annotation(
-        conn=dataset._conn,
-        map_ann_id=process_annotation_ids[-1],
-        across_groups=False
+        conn=dataset._conn, map_ann_id=process_annotation_ids[-1], across_groups=False
     )
 
     assert process_annotation
@@ -122,12 +139,10 @@ def test_argolight_b(argolight_b_dataset):
         object_type="dataset",
         object_id=dataset.getId(),
         ns=str(ArgolightBDataset.class_model_uri),
-        across_groups=False
+        across_groups=False,
     )
     process_annotation = ezomero.get_map_annotation(
-        conn=dataset._conn,
-        map_ann_id=process_annotation_ids[-1],
-        across_groups=False
+        conn=dataset._conn, map_ann_id=process_annotation_ids[-1], across_groups=False
     )
 
     assert process_annotation
@@ -143,12 +158,10 @@ def test_argolight_e_xres(argolight_e_xres_dataset):
         object_type="dataset",
         object_id=dataset.getId(),
         ns=str(ArgolightEDataset.class_model_uri),
-        across_groups=False
+        across_groups=False,
     )
     process_annotation = ezomero.get_map_annotation(
-        conn=dataset._conn,
-        map_ann_id=process_annotation_ids[-1],
-        across_groups=False
+        conn=dataset._conn, map_ann_id=process_annotation_ids[-1], across_groups=False
     )
 
     assert process_annotation
@@ -164,12 +177,10 @@ def test_argolight_e_yres(argolight_e_yres_dataset):
         object_type="dataset",
         object_id=dataset.getId(),
         ns=str(ArgolightEDataset.class_model_uri),
-        across_groups=False
+        across_groups=False,
     )
     process_annotation = ezomero.get_map_annotation(
-        conn=dataset._conn,
-        map_ann_id=process_annotation_ids[-1],
-        across_groups=False
+        conn=dataset._conn, map_ann_id=process_annotation_ids[-1], across_groups=False
     )
 
     assert process_annotation

@@ -3,10 +3,11 @@ import logging
 from itertools import product
 from random import choice
 from string import ascii_letters
-from typing import Union, Tuple, List, Dict
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from microscopemetrics.data_schema import core_schema as mm_schema
 from omero import grid
 from omero.constants import metadata
 from omero.gateway import (
@@ -22,6 +23,7 @@ from omero.gateway import (
 )
 from omero.model import (
     DatasetI,
+    DatasetImageLinkI,
     EllipseI,
     ImageI,
     LengthI,
@@ -30,17 +32,14 @@ from omero.model import (
     OriginalFileI,
     PointI,
     PolygonI,
+    ProjectDatasetLinkI,
     ProjectI,
     RectangleI,
     RoiI,
     enums,
-    DatasetImageLinkI,
-    ProjectDatasetLinkI,
 )
 from omero.rtypes import rdouble, rint, rlong, rstring
 from pandas import DataFrame
-
-from microscopemetrics.data_schema import core_schema as mm_schema
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +99,7 @@ def get_object_from_url(url: str) -> List[Tuple[str, int]]:
         return [(tail.split("-")[0], int(tail.split("-")[-1]))]
 
 
-def get_url_from_object(
-    obj: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]
-) -> str:
+def get_url_from_object(obj: Union[ImageWrapper, DatasetWrapper, ProjectWrapper]) -> str:
     """Get the URL from an OMERO object"""
     logger.debug(f"get_url_from_object: object type is {type(obj)}")
     return f"https://{obj._conn.host}/webclient/?show={obj.OMERO_CLASS}-{obj.getId()}"
@@ -215,9 +212,7 @@ def get_image_intensities(
 
     # intensities = np.zeros(output_shape, dtype=data_type)
 
-    intensities = np.zeros(
-        shape=(nr_planes, output_shape[3], output_shape[4]), dtype=data_type
-    )
+    intensities = np.zeros(shape=(nr_planes, output_shape[3], output_shape[4]), dtype=data_type)
     if whole_planes:
         np.stack(list(pixels.getPlanes(zctList=zct_list)), out=intensities)
     else:
@@ -307,8 +302,7 @@ def _create_image(
     )
     if pixels_type is None:
         raise ValueError(
-            "Cannot create an image in omero from numpy array "
-            "with dtype: %s" % data_type
+            "Cannot create an image in omero from numpy array " "with dtype: %s" % data_type
         )
 
     image_id = pixels_service.createImage(
@@ -341,9 +335,7 @@ def _create_image_whole(
 ):
     zct_generator = (
         data[z, c, t, :, :]
-        for z, c, t in product(
-            range(data.shape[0]), range(data.shape[1]), range(data.shape[2])
-        )
+        for z, c, t in product(range(data.shape[0]), range(data.shape[1]), range(data.shape[2]))
     )
 
     return conn.createImageFromNumpySeq(
@@ -384,9 +376,7 @@ def create_image_from_numpy_array(
     :return: The new image
     """
 
-    zct_list = list(
-        product(range(data.shape[0]), range(data.shape[1]), range(data.shape[2]))
-    )
+    zct_list = list(product(range(data.shape[0]), range(data.shape[1]), range(data.shape[2])))
     zct_generator = (data[z, c, t, :, :] for z, c, t in zct_list)
 
     # Verify if the image must be tiled
@@ -490,9 +480,7 @@ def _get_tile_list(zct_list, data_shape, tile_size):
     return zct_tile_list
 
 
-def create_roi(
-    conn: BlitzGateway, image: ImageWrapper, shapes: List, name, description
-):
+def create_roi(conn: BlitzGateway, image: ImageWrapper, shapes: List, name, description):
     # create an ROI, link it to Image
     roi = RoiI()  # TODO: work with wrappers
     # use the omero.model.ImageI that underlies the 'image' wrapper
@@ -616,10 +604,7 @@ def create_shape_ellipse(mm_ellipse: mm_schema.Ellipse):
 def create_shape_polygon(mm_polygon: mm_schema.Polygon):
     polygon = PolygonI()
     points_str = "".join(
-        [
-            "".join([str(vertex.x), ",", str(vertex.y), ", "])
-            for vertex in mm_polygon.vertexes
-        ]
+        ["".join([str(vertex.x), ",", str(vertex.y), ", "]) for vertex in mm_polygon.vertexes]
     )[:-2]
     polygon.points = rstring(points_str)
     polygon.theZ = rint(mm_polygon.z)
@@ -640,16 +625,10 @@ def create_shape_mask(mm_mask: mm_schema.Mask):
     mask.setY(rdouble(mm_mask.y))
     mask.setTheZ(rint(mm_mask.z))
     mask.setTheT(rint(mm_mask.t))
-    mask.setWidth(
-        rdouble(mm_mask.mask.x.values[0])
-    )  # TODO: see how to get shape if not np.array
+    mask.setWidth(rdouble(mm_mask.mask.x.values[0]))  # TODO: see how to get shape if not np.array
     mask.setHeight(rdouble(mm_mask.mask.y.values[0]))
-    mask_packed = np.packbits(
-        mm_mask.mask.data
-    )  # TODO: raise error when not boolean array
-    mask.setBytes(
-        mask_packed.tobytes()
-    )  # TODO: review how to setBytes when not a np.array
+    mask_packed = np.packbits(mm_mask.mask.data)  # TODO: raise error when not boolean array
+    mask.setBytes(mask_packed.tobytes())  # TODO: review how to setBytes when not a np.array
     _set_shape_properties(
         mask,
         label=mm_mask.label,
@@ -810,9 +789,7 @@ def create_table(
 ):
     """Creates a table annotation from a pandas dataframe or a list of columns as dictionaries."""
 
-    table_name = (
-        f'{table_name}_{"".join([choice(ascii_letters) for _ in range(32)])}.h5'
-    )
+    table_name = f'{table_name}_{"".join([choice(ascii_letters) for _ in range(32)])}.h5'
     columns = _create_columns(table)
 
     resources = conn.c.sf.sharedResources()
@@ -869,9 +846,7 @@ def _link_annotation(
     object_wrapper.linkAnnotation(annotation_wrapper)
 
 
-def _link_dataset_to_project(
-    conn: BlitzGateway, dataset: DatasetWrapper, project: ProjectWrapper
-):
+def _link_dataset_to_project(conn: BlitzGateway, dataset: DatasetWrapper, project: ProjectWrapper):
     link = ProjectDatasetLinkI()
     link.setParent(
         ProjectI(project.getId(), False)
@@ -880,9 +855,7 @@ def _link_dataset_to_project(
     conn.getUpdateService().saveObject(link)
 
 
-def _link_image_to_dataset(
-    conn: BlitzGateway, image: ImageWrapper, dataset: DatasetWrapper
-):
+def _link_image_to_dataset(conn: BlitzGateway, image: ImageWrapper, dataset: DatasetWrapper):
     link = DatasetImageLinkI()
     link.setParent(DatasetI(dataset.getId(), False))
     link.setChild(ImageI(image.getId(), False))

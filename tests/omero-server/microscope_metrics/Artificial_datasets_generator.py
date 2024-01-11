@@ -55,9 +55,7 @@ from skimage.util import random_noise
 def Run_script_locally():
     from credentials import GROUP, HOST, PASSWORD, PORT, USER
 
-    conn = gateway.BlitzGateway(
-        username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST
-    )
+    conn = gateway.BlitzGateway(username=USER, passwd=PASSWORD, group=GROUP, port=PORT, host=HOST)
 
     script_params = {
         "DatasetID": 1,
