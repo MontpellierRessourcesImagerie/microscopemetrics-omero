@@ -24,7 +24,6 @@ analysis:  # These are the OMERO datasets. One dataset per type of analysis
     description: Argolight B analysis (spots pattern)
     data:
       name: argolight_b_image
-      tag_id:
     parameters:
       remove_center_cross: true
       spots_distance: 5.0
