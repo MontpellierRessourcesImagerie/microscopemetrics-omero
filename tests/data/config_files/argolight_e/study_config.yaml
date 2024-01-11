@@ -24,7 +24,7 @@ analysis:  # These are the OMERO datasets. One dataset per type of analysis
     description: Argolight E analysis (X resolution)
     data:
       name: argolight_e_image
-      tag_id:
+      tag_id: 23
     parameters:
       axis: 2 # Y resolution
       measured_band: 0.2
@@ -37,7 +37,7 @@ analysis:  # These are the OMERO datasets. One dataset per type of analysis
     description: Argolight E analysis (Y resolution)
     data:
       name: argolight_e_image
-      tag_id:
+      tag_id: 25
     parameters:
       axis: 1 # Y resolution
       measured_band: 0.2
