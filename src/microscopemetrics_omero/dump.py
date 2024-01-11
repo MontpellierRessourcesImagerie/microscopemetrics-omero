@@ -4,10 +4,8 @@ from typing import Union
 import numpy as np
 import ast
 
-from dataclasses import fields
-
 from microscopemetrics_omero import omero_tools
-from microscopemetrics.data_schema import core_schema as mm_schema
+from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
 from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
 logger = logging.getLogger(__name__)

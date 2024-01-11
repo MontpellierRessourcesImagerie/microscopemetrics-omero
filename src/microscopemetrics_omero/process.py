@@ -5,7 +5,7 @@ from dataclasses import fields
 
 from microscopemetrics_omero import omero_tools
 from microscopemetrics.samples import argolight, field_illumination
-from microscopemetrics.data_schema import core_schema as mm_schema
+from microscopemetrics_schema.datamodel import microscopemetrics_schema as mm_schema
 from omero.gateway import BlitzGateway, ImageWrapper, DatasetWrapper, ProjectWrapper
 
 from microscopemetrics_omero import dump, load
