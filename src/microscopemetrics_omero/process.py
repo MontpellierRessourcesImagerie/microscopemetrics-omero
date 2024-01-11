@@ -93,9 +93,12 @@ def process_dataset(dataset: DatasetWrapper, config: dict) -> None:
             # TODO: verify if the analysis was already done
             start_time = datetime.now()
 
-            images = omero_tools.get_tagged_images_in_dataset(
-                dataset, analysis_config["data"]["tag_id"]
-            )
+            if "tag_id" in analysis_config["data"] and analysis_config["data"]["tag_id"] is not None:
+                images = omero_tools.get_tagged_images_in_dataset(
+                    dataset, analysis_config["data"]["tag_id"]
+                )
+            else:
+                images = [i for i in dataset.listChildren()]
 
             for image in images:  # TODO: This seems to cover only single image analysis
                 mm_dataset = process_image(image=image, analysis_config=analysis_config)
