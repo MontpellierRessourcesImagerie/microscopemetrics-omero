@@ -1,3 +1,5 @@
+# This repository is outdated. Go to ![OMERO-metrics](https://github.com/MontpellierRessourcesImagerie/OMERO-metrics) for the up to date version
+
 ![PyPI - Version](https://img.shields.io/pypi/v/microscopemetrics_omero)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/microscopemetrics_omero)
 
